@@ -1,0 +1,32 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: ms-viajes
+  datasource:
+    url: jdbc:h2:mem:viajesdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+# URLs de los microservicios con los que se comunica ms-viajes
+microservicios:
+  pasajeros:
+    url: http://localhost:8081
+  conductores:
+    url: http://localhost:8082
+  tarifas:
+    url: http://localhost:8085
