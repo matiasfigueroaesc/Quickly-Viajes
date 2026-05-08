@@ -7,6 +7,9 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="ms-conductores" />
+        <module name="ms-pagos" />
+        <module name="ms-tarifas" />
+        <module name="ms-viajes" />
         <module name="ms-pasajeros" />
       </profile>
     </annotationProcessing>
@@ -14,7 +17,10 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="ms-conductores" options="-parameters" />
+      <module name="ms-pagos" options="-parameters" />
       <module name="ms-pasajeros" options="-parameters" />
+      <module name="ms-tarifas" options="-parameters" />
+      <module name="ms-viajes" options="-parameters" />
     </option>
   </component>
 </project>
