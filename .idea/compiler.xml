@@ -6,21 +6,31 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="ms-calificaciones" />
         <module name="ms-conductores" />
-        <module name="ms-pagos" />
+        <module name="ms-notificaciones" />
         <module name="ms-tarifas" />
         <module name="ms-viajes" />
         <module name="ms-pasajeros" />
+        <module name="ms-zonas" />
+        <module name="ms-incidencias" />
+        <module name="ms-pagos" />
+        <module name="ms-vehiculos" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="ms-calificaciones" options="-parameters" />
       <module name="ms-conductores" options="-parameters" />
+      <module name="ms-incidencias" options="-parameters" />
+      <module name="ms-notificaciones" options="-parameters" />
       <module name="ms-pagos" options="-parameters" />
       <module name="ms-pasajeros" options="-parameters" />
       <module name="ms-tarifas" options="-parameters" />
+      <module name="ms-vehiculos" options="-parameters" />
       <module name="ms-viajes" options="-parameters" />
+      <module name="ms-zonas" options="-parameters" />
     </option>
   </component>
 </project>

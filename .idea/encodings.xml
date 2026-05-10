@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/ms-calificaciones/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/ms-conductores/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-incidencias/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-notificaciones/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/ms-pagos/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/ms-pasajeros/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/ms-tarifas/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-vehiculos/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/ms-viajes/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-zonas/src/main/java" charset="UTF-8" />
   </component>
 </project>
