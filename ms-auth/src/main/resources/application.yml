@@ -1,0 +1,32 @@
+
+server:
+  port: 8091
+
+spring:
+  application:
+    name: ms-auth
+  datasource:
+    url: jdbc:h2:file:./data/authdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+# Configuracion propia de JWT.
+# IMPORTANTE: jwt.secret es un valor de DESARROLLO. Antes de desplegar a
+# produccion (FASE 6/7) se debe mover a una variable de entorno y usar un
+# secreto largo y aleatorio (minimo 256 bits para HS256).
+jwt:
+  secret: "QuicklyViajesGrupo11SecretKeyParaFirmarJWT_DEBE_SER_LARGA_2026"
+  expiration-ms: 3600000   # 1 hora
