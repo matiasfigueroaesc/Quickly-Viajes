@@ -1,0 +1,340 @@
+===============================================================================
+QUICKLYVIAJES - GRUPO 11
+GUIA DE CONFIGURACION MySQL EN LARAGON - FASE 4
+===============================================================================
+Generado: 30-06-2026
+Propósito: Instrucciones paso a paso para configurar MySQL en Laragon
+y crear las bases de datos necesarias para FASE 4.
+
+===============================================================================
+REQUISITOS PREVIOS
+===============================================================================
+
+1. Laragon debe estar instalado en tu máquina (Windows)
+2. MySQL debe estar activo en Laragon
+3. Acceso a terminal/PowerShell como administrador
+
+===============================================================================
+PASO 1: VERIFICAR QUE MYSQL ESTÁ ACTIVO EN LARAGON
+===============================================================================
+
+1. Abre Laragon (C:\laragon\laragon.exe)
+2. Verifica que MySQL esté activado (icono de MySQL debe estar verde)
+3. Si no está activo, clickea en "Services" y enciende MySQL
+
+    Conexión de prueba:
+    Abre terminal y ejecuta:
+    
+    mysql -u root -p
+    
+    (Password: root por defecto en Laragon)
+    
+    Si funciona, deberías ver:
+    mysql>
+
+===============================================================================
+PASO 2: CREAR LAS BASES DE DATOS (11 en total)
+===============================================================================
+
+Opción A: Por línea de comandos (más rápido)
+-------------------------------------------
+
+Abre PowerShell como Administrador y ejecuta esto en una sola línea:
+
+mysql -u root -p -e "CREATE DATABASE authdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE conductoresdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE viajesdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE pagosdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE tarifasdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE calificacionesdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE incidenciasdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE vehiculosdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE zonasdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE notificacionesdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE pasajerosdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+Password: root
+
+
+Opción B: Por script SQL
+------------------------
+
+1. Crea un archivo llamado "crear_bases_datos.sql" en tu carpeta del proyecto
+
+2. Copia esto en el archivo:
+
+---INICIO---
+CREATE DATABASE authdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE conductoresdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE viajesdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE pagosdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE tarifasdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE calificacionesdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE incidenciasdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE vehiculosdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE zonasdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE notificacionesdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE pasajerosdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+---FIN---
+
+3. Ejecuta desde terminal:
+
+   mysql -u root -p < crear_bases_datos.sql
+   
+   Password: root
+
+
+Opción C: Usando phpMyAdmin (interfaz gráfica)
+-----------------------------------------------
+
+1. Abre Laragon
+2. Clickea "Web" o abre http://localhost
+3. Clickea en "phpMyAdmin"
+4. Login: usuario "root", sin password
+5. Click en pestaña "SQL"
+6. Copia-pega el contenido del script anterior
+7. Ejecuta
+
+
+===============================================================================
+PASO 3: VERIFICAR QUE LAS BASES DE DATOS SE CREARON
+===============================================================================
+
+En terminal:
+
+mysql -u root -p
+
+(Enter password: root)
+
+Luego ejecuta:
+
+SHOW DATABASES;
+
+Deberías ver:
+
++---------------------+
+| Database            |
++---------------------+
+| authdb              |
+| calificacionesdb    |
+| conductoresdb       |
+| incidenciasdb       |
+| information_schema  |
+| mysql               |
+| notificacionesdb    |
+| pagosdb             |
+| performance_schema  |
+| pasajerosdb         |
+| tarifasdb           |
+| vehiculosdb         |
+| viajesdb            |
+| zonasdb             |
++---------------------+
+
+Si ves todas las 11 bases de datos (más las de sistema) → ✅ LISTO
+
+Para salir de MySQL:
+exit;
+
+===============================================================================
+PASO 4: CONFIGURAR PROYECTO SPRING BOOT
+===============================================================================
+
+1. Abre tu proyecto en el IDE
+
+2. Verifica que todos los application.yml tengan esta configuración:
+
+   spring:
+     datasource:
+       url: jdbc:mysql://localhost:3306/{nombre_db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+       driverClassName: com.mysql.cj.jdbc.Driver
+       username: root
+       password: root
+     jpa:
+       database-platform: org.hibernate.dialect.MySQL8Dialect
+       hibernate:
+         ddl-auto: validate
+       show-sql: true
+     flyway:
+       enabled: true
+       baseline-on-migrate: true
+
+   IMPORTANTE: 
+   - {nombre_db} debe ser específico para cada microservicio (authdb, pasajerosdb, etc.)
+   - useSSL=false para desarrollo local
+   - serverTimezone=UTC para evitar errores de zona horaria
+   - allowPublicKeyRetrieval=true para MySQL 8.0+
+
+3. Compila todos los módulos:
+
+   cd <raiz_del_proyecto>
+   mvn clean install
+   
+   o en terminal:
+   
+   ./mvnw clean install
+
+===============================================================================
+PASO 5: LEVANTAR SERVICIOS CON MYSQL
+===============================================================================
+
+Orden correcto de arranque:
+
+1. Eureka Server (debe levantarse primero):
+   cd eureka-server
+   ./mvnw spring-boot:run
+   
+   Verifica que funciona: http://localhost:8761
+
+2. API Gateway (en otra terminal):
+   cd api-gateway
+   ./mvnw spring-boot:run
+   
+   Verifica que funciona: http://localhost:8080
+
+3. MS-Auth (en otra terminal):
+   cd ms-auth
+   ./mvnw spring-boot:run
+   
+   Verifica que funciona: http://localhost:8091/swagger-ui.html
+   
+   En Swagger, prueba POST /auth/login con:
+   {
+     "username": "admin",
+     "password": "Admin123!"
+   }
+
+4. MS-Pasajeros (en otra terminal):
+   cd ms-pasajeros
+   ./mvnw spring-boot:run
+   
+   Verifica que funciona: http://localhost:8081/swagger-ui.html
+   
+   En Swagger:
+   - Autoriza con el token obtenido en ms-auth
+   - Prueba GET /api/pasajeros
+   - Deberías ver datos con "_links" (HATEOAS)
+
+5. Otros microservicios (opcional, depende de tu desarrollo):
+   cd ms-conductores
+   ./mvnw spring-boot:run &
+   
+   Y así sucesivamente...
+
+===============================================================================
+PASO 6: VERIFICAR QUE FLYWAY CREO LAS TABLAS
+===============================================================================
+
+En phpMyAdmin o terminal:
+
+mysql -u root -p pasajerosdb
+
+(Enter password: root)
+
+Luego:
+
+SHOW TABLES;
+
+Deberías ver:
+
++---------------------+
+| Tables_in_pasajeros |
++---------------------+
+| flyway_schema_history |
+| pasajeros             |
++---------------------+
+
+SELECT * FROM pasajeros;
+
+Deberías ver el registro de prueba:
+
++----+-----------+---------------+---------------+
+| id | nombre    | email         | telefono      |
++----+-----------+---------------+---------------+
+|  1 | Juan Perez| juan@gmail.com| +56912345678  |
++----+-----------+---------------+---------------+
+
+Si ves esto → ✅ Flyway funcionó correctamente
+
+===============================================================================
+PASO 7: TESTING COMPLETO DE EXTREMO A EXTREMO
+===============================================================================
+
+1. Todos los servicios levantados (Eureka, Gateway, Auth, Pasajeros, etc.)
+
+2. En Postman o curl, haz login primero:
+
+   POST http://localhost:8091/auth/login
+   
+   Body:
+   {
+     "username": "admin",
+     "password": "Admin123!"
+   }
+   
+   Copia el token de la respuesta
+
+3. Prueba crear un pasajero:
+
+   POST http://localhost:8080/api/pasajeros
+   
+   Headers:
+   Authorization: Bearer {token_copiado}
+   Content-Type: application/json
+   
+   Body:
+   {
+     "nombre": "Diego Perez",
+     "email": "diego@test.com",
+     "telefono": "987654321"
+   }
+   
+   Verifica que responde 201 y tienes "_links" en la respuesta
+
+4. Verifica en MySQL que el registro se insertó:
+
+   mysql -u root -p pasajerosdb
+   
+   SELECT * FROM pasajeros;
+
+Si todo funciona → ✅ FASE 4 COMPLETADA
+
+===============================================================================
+SOLUCION DE PROBLEMAS
+===============================================================================
+
+Problema: "Communications link failure"
+Solución: MySQL no está corriendo. Verifica en Laragon que esté activo.
+
+Problema: "Access denied for user 'root'@'localhost'"
+Solución: La contraseña es incorrecta. En Laragon es "root" por defecto.
+
+Problema: "Unknown database"
+Solución: La base de datos no existe. Ejecuta PASO 2 nuevamente.
+
+Problema: "Flyway error: Table already exists"
+Solución: Manualmente dropeó la tabla pero Flyway no lo supo. Limpia:
+   
+   DELETE FROM {database}.flyway_schema_history WHERE script = 'V1__...'
+
+Problema: "Timeout connecting to MySQL"
+Solución: MySQL tarda en responder. Aumenta timeout en application.yml:
+   
+   url: jdbc:mysql://localhost:3306/pasajerosdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&connectTimeout=60000
+
+===============================================================================
+PERFIL H2 (DESARROLLO SIN MYSQL)
+===============================================================================
+
+Si en algún momento quieres volver a H2 (sin MySQL) para desarrollo:
+
+Levanta servicios con perfil H2:
+
+   ./mvnw spring-boot:run -Dspring.profiles.active=h2
+
+Esto activa la configuración H2 del application.yml en lugar de MySQL.
+
+===============================================================================
+PROXIMO PASO
+===============================================================================
+
+Una vez que verifiques que:
+✅ Las 11 bases de datos están creadas en MySQL
+✅ Los servicios levantaron sin errores
+✅ Flyway creó todas las tablas
+✅ Puedes hacer login y crear registros
+✅ Los datos se persisten en MySQL (verificados en phpMyAdmin)
+
+FASE 4 está completada. Procede a FASE 5 (Aseguramiento de Calidad - Tests).
+
+===============================================================================

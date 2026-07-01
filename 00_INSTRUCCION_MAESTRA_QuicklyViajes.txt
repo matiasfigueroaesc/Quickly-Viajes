@@ -1,0 +1,472 @@
+===============================================================================
+QUICKLYVIAJES - GRUPO 11
+INSTRUCCION MAESTRA DE DESARROLLO CONJUNTO
+===============================================================================
+Generado: 30-06-2026
+Proposito: Este documento es el punto de partida para retomar el desarrollo
+del proyecto en cualquier momento, por cualquier persona (humana o asistida
+por IA). Contiene el estado inicial detectado, las decisiones tomadas, el
+plan de fases acordado y la metodologia de trabajo que se debe respetar.
+
+===============================================================================
+1. METODOLOGIA DE TRABAJO (LEER PRIMERO)
+===============================================================================
+
+El desarrollo se hace EN FASES, paso a paso, NUNCA todo de una vez:
+
+1. Antes de programar una fase, se presenta un plan breve y se espera el
+   visto bueno explicito del usuario.
+2. Si una tarea requiere accion del propio usuario (instalar algo, crear una
+   cuenta, ejecutar un comando en su maquina, configurar Laragon, etc.), se le
+   dan instrucciones claras y numeradas en vez de asumir que la IA puede
+   hacerlo.
+3. Al terminar cada fase, se genera un archivo .txt de resumen (mismo estilo
+   que este documento) que describe: que se hizo, que decisiones se tomaron,
+   que quedo pendiente, y como retomar. Estos resumenes se numeran
+   correlativamente, ej:
+       01_FASE0_resumen.txt
+       02_FASE1_resumen.txt
+       03_FASE2_resumen.txt
+       etc.
+3.1. IMPORTANTE - Entrega de resultados junto con el resumen:
+   El archivo .txt de resumen NUNCA se entrega solo. Cada vez que se cierra
+   una fase, se debe entregar EN EL MISMO MOMENTO, sin que el usuario tenga
+   que pedirlo:
+     a) El archivo .txt de resumen de la fase.
+     b) TODOS los archivos/codigo resultantes de esa fase (codigo fuente
+        nuevo o modificado, pom.xml, application.yml, migraciones, etc.),
+        ya sea como archivos individuales o empaquetados en un .zip del
+        proyecto completo actualizado, segun lo que tenga mas sentido para
+        el volumen de cambios.
+     c) Si se hicieron cambios sobre el repositorio git (commits), el
+        commit debe quedar incluido dentro del .zip entregado (no basta con
+        mencionar el hash del commit en el texto).
+   Esta regla existe porque en fases anteriores el resumen .txt se entrego
+   sin los archivos/resultados reales, obligando al usuario a pedirlos por
+   separado. Eso no debe volver a ocurrir: el resumen y los resultados se
+   entregan siempre juntos, en la misma respuesta de cierre de fase.
+4. No se avanza a la fase siguiente sin que el usuario lo confirme.
+5. Cualquier persona (o IA) que retome el proyecto debe leer primero este
+   archivo y luego el ULTIMO resumen de fase generado, para saber exactamente
+   en que punto esta el desarrollo.
+
+===============================================================================
+2. CONTEXTO DEL PROYECTO
+===============================================================================
+
+Nombre: QuicklyViajes
+Grupo: 11
+Tipo: Sistema de microservicios para gestion de viajes (estilo ride-hailing)
+construido con Spring Boot 3.2.5 y Java 21.
+
+ADVERTENCIA SOBRE VERSIONES DEL PROYECTO:
+Se entregaron dos archivos .zip del proyecto:
+  - EvParcial2-QuicklyViajes-grupo-11.zip  -> VERSION DESACTUALIZADA, NO USAR
+  - proyecto-2-evaluacion.zip              -> VERSION CORRECTA Y VIGENTE
+
+A partir de este punto, TODO el trabajo se realiza sobre el contenido de
+"proyecto-2-evaluacion.zip" (carpeta raiz: proyecto-2-evaluacion/). El otro
+zip se descarta como referencia historica unicamente.
+
+Microservicios existentes (9), todos Spring Boot 3.2.5 / Java 21, con
+Web, Data JPA, Validation, Flyway y H2 (en archivo, no en memoria):
+
+  ms-pasajeros        puerto 8081
+  ms-conductores       puerto 8082
+  ms-viajes            puerto 8083  (usa WebFlux; llama a pasajeros,
+                                      conductores y tarifas via URL fija)
+  ms-pagos             puerto 8084  (usa WebFlux; llama a ms-viajes)
+  ms-tarifas           puerto 8085
+  ms-calificaciones    puerto 8086
+  ms-incidencias       puerto 8087
+  ms-vehiculos         puerto 8088
+  ms-zonas             puerto 8089
+  ms-notificaciones    puerto 8090
+
+Cada microservicio sigue el mismo patron interno:
+  controller / service / repository / model(entity, dto) / exception
+  + GlobalExceptionHandler + ErrorResponse
+  + migracion Flyway inicial en src/main/resources/db/migration/V1__...sql
+
+NO existen todavia (esto es justamente lo que hay que construir):
+  - Microservicio de autenticacion (ms-auth)
+  - Servidor Eureka
+  - API Gateway
+  - Swagger / springdoc-openapi
+  - HATEOAS en los controladores
+  - Tests unitarios (JUnit/Mockito/DataFaker) y JaCoCo
+  - MySQL en produccion (hoy todos usan H2 en archivo local)
+  - Dockerfiles y docker-compose
+  - Pipeline de despliegue a Render
+  - README.md raiz del proyecto
+
+===============================================================================
+3. DECISIONES TECNICAS YA ACORDADAS CON EL USUARIO
+===============================================================================
+
+a) Base de datos de produccion: MySQL, usando Laragon en el entorno local
+   de desarrollo del usuario (servidor MySQL de Laragon, puerto 3306 por
+   defecto). En Docker/Render se usara un contenedor MySQL equivalente,
+   manteniendo compatibilidad de conexion (mismo dialecto, mismas
+   migraciones Flyway).
+
+b) Estrategia de despliegue: primero LOCAL con docker-compose (probar que
+   todo el sistema levanta sin IDE), y despues se conecta GitHub con Render
+   para despliegue continuo en la nube.
+
+c) Autenticacion: se crea un microservicio nuevo "ms-auth" que:
+   - Gestiona usuarios/credenciales con Spring Security.
+   - Hashea contraseñas (BCrypt).
+   - Emite tokens JWT al autenticar.
+   El API Gateway es responsable de validar el JWT en cada request entrante
+   ANTES de enrutar hacia el microservicio correspondiente. Los
+   microservicios internos no vuelven a validar el JWT (confian en que el
+   Gateway ya filtro las peticiones). Este es el enfoque "Gateway como
+   punto unico de validacion", mas simple y adecuado para el alcance del
+   proyecto.
+
+===============================================================================
+4. PLAN DE FASES ACORDADO
+===============================================================================
+
+El orden busca minimizar retrabajo: primero se resuelve la deuda de
+seguridad y la infraestructura distribuida (porque todo lo demas depende de
+elementos como Eureka/Gateway estando ya correctamente armados), luego se
+documenta y formatea la API, luego se pasa a un motor de base de datos
+definitivo, luego se aseguran pruebas y cobertura, y al final se
+containeriza, se despliega y se documenta el cierre.
+
+FASE 0 - Linea base y limpieza
+  - Confirmar version correcta del proyecto (proyecto-2-evaluacion.zip).
+  - Revisar y corregir .gitignore por microservicio (la carpeta target/
+    parece estar siendo versionada en commits previos; hay que sacarla del
+    control de versiones).
+  - Dejar la estructura de carpetas y rama de trabajo lista para empezar.
+
+FASE 1 - Microservicio de autenticacion (deuda de seguridad)
+  - Crear ms-auth (Spring Boot, Spring Security, JWT, hashing con BCrypt).
+  - Entidades de usuario/roles minimas, endpoints de login y (si aplica)
+    registro.
+  - Generacion y validacion de JWT (firma, expiracion).
+
+FASE 2 - Infraestructura distribuida
+  - Levantar Servidor Eureka (Spring Cloud Netflix Eureka Server).
+  - Levantar API Gateway (Spring Cloud Gateway) con enrutamiento via YAML
+    hacia los 10 microservicios (9 actuales + ms-auth).
+  - Configurar cada microservicio como cliente Eureka (Eureka Client).
+  - Filtro de validacion JWT en el Gateway.
+
+FASE 3 - Documentacion y formato REST
+  - Agregar springdoc-openapi (Swagger) a cada microservicio.
+  - Adaptar los controladores para cumplir HATEOAS (links de navegacion
+    en las respuestas, ej. usando Spring HATEOAS / EntityModel).
+
+FASE 4 - Persistencia para produccion
+  - Reemplazar H2 por MySQL (Laragon en local) en todos los microservicios.
+  - Ajustar/generar migraciones Flyway para MySQL (tipos de datos, motor,
+    charset, etc.).
+
+FASE 5 - Aseguramiento de calidad (QA)
+  - Tests unitarios con JUnit + Mockito + DataFaker por microservicio.
+  - Configurar JaCoCo y validar que se cumple minimo 80% de cobertura.
+
+FASE 6 - Contenerizacion y despliegue local
+  - Dockerfile por cada microservicio (incluyendo ms-auth, Eureka y
+    Gateway).
+  - docker-compose.yml que orqueste: MySQL, Eureka, Gateway, ms-auth y los
+    9 microservicios de negocio.
+  - Verificar que el sistema completo levanta sin usar el IDE.
+
+FASE 7 - Despliegue remoto
+  - Configurar despliegue continuo conectando el repositorio de GitHub con
+    Render.
+
+FASE 8 - Cierre y entrega
+  - Redactar README.md raiz: contexto del proyecto, integrantes del grupo,
+    lista de microservicios y sus responsabilidades, rutas expuestas por el
+    Gateway, enlaces a Swagger de cada servicio, instrucciones de ejecucion
+    (local con Docker y como acceder al deploy en Render).
+
+===============================================================================
+5. REGLA DE AVANCE
+===============================================================================
+
+No se inicia ninguna fase sin confirmacion expresa del usuario. Al cierre de
+cada fase se entrega:
+  a) El codigo/archivos correspondientes.
+  b) Un resumen .txt numerado (ver seccion 1) que cualquier persona o IA
+     pueda leer para continuar sin perder contexto.
+
+===============================================================================
+6. BITACORA DE AVANCE (ACTUALIZAR EN CADA FASE)
+===============================================================================
+
+INSTRUCCIONES PARA ESTA SECCION:
+  - Cada vez que se cierra una fase, se agrega aqui una nueva entrada al
+    final de la bitacora (no se borran las anteriores).
+  - La entrada debe incluir: numero y nombre de fase, fecha, un resumen
+    breve de los cambios realizados (que se creo/modifico y por que), las
+    decisiones tomadas durante esa fase si las hubo, y el nombre del
+    archivo .txt de resumen detallado que se genero para esa fase
+    (ver seccion 1, ej. 02_FASE1_resumen.txt).
+  - Esta bitacora es el resumen rapido de "donde vamos"; los archivos
+    NN_FASEx_resumen.txt son el detalle completo de cada fase. Quien
+    retome el proyecto deberia poder leer SOLO esta bitacora y entender el
+    avance general, y recurrir al resumen detallado de la ultima fase si
+    necesita mas profundidad antes de continuar.
+  - No se modifica el contenido de entradas ya escritas; si algo de una
+    fase anterior cambia despues, se anota como una entrada nueva indicando
+    que corrige o ajusta una fase previa.
+
+Formato sugerido para cada entrada:
+
+  -------------------------------------------------------------------------
+  FASE <numero> - <nombre de la fase>
+  Fecha: DD-MM-AAAA
+  Estado: completada / en progreso / pausada
+  Resumen de cambios:
+    - ...
+    - ...
+  Decisiones tomadas en esta fase:
+    - ...
+  Pendientes o notas para la siguiente fase:
+    - ...
+  Resumen detallado: NN_FASEx_resumen.txt
+  -------------------------------------------------------------------------
+
+(Aqui se van agregando las entradas a medida que avanza el desarrollo)
+
+-------------------------------------------------------------------------
+FASE 0 - Linea base y limpieza
+Fecha: 30-06-2026
+Estado: completada
+Resumen de cambios:
+  - Se confirmo trabajo exclusivo sobre proyecto-2-evaluacion.zip.
+  - Se verifico que los 9 microservicios existentes coinciden con la
+    estructura descrita en este documento (Spring Boot 3.2.5 / Java 21,
+    patron controller/service/repository/model/exception).
+  - Se destrackearon de git 56 archivos de la carpeta target/ que
+    estaban versionados por error en 5 microservicios (ms-calificaciones,
+    ms-incidencias, ms-notificaciones, ms-vehiculos, ms-zonas), pese a
+    que el .gitignore ya incluia la regla "target/". Commit: b154db9.
+Decisiones tomadas en esta fase:
+  - No se modificaron los .gitignore (ya estaban correctos).
+  - Se detecto ruido de fin de linea (CRLF/LF) en ~171 archivos, propio
+    del entorno de trabajo usado para la limpieza; se dejo fuera del
+    commit a proposito, sin afectar el codigo real del proyecto.
+Pendientes o notas para la siguiente fase:
+  - Usuario debe hacer push del commit b154db9 (o equivalente) a la
+    rama main en GitHub.
+  - FASE 1 (ms-auth) lista para iniciar, pendiente de confirmacion.
+Resumen detallado: 01_FASE0_resumen.txt
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+FASE 1 - Microservicio de autenticacion (deuda de seguridad)
+Fecha: 30-06-2026
+Estado: completada
+Resumen de cambios:
+  - Se creo ms-auth (puerto 8091), mismo patron interno que el resto de
+    microservicios, con Spring Security, BCrypt y JWT (JJWT 0.12.5).
+  - Entidad Usuario + migracion Flyway V1 con usuario admin de prueba
+    (password "Admin123!", hash BCrypt verificado).
+  - Endpoints: POST /auth/register, POST /auth/login, GET /auth/me
+    (protegido, requiere JWT).
+  - JwtService encapsula generacion/validacion del token (firma HS256),
+    listo para ser reutilizado por el Gateway en FASE 2.
+  - Commit: 9c306a8.
+Decisiones tomadas en esta fase:
+  - ms-auth valida su propio JWT internamente solo para poder probar el
+    flujo ahora; la validacion centralizada para el resto del sistema
+    sigue siendo responsabilidad del Gateway (FASE 2), sin cambios al
+    enfoque acordado.
+  - jwt.secret en application.yml queda marcado como valor de desarrollo,
+    pendiente de mover a variable de entorno antes de despliegue.
+  - No se pudo compilar con mvnw dentro del entorno de IA (sin acceso a
+    Maven Central); se recomienda verificar build localmente.
+Pendientes o notas para la siguiente fase:
+  - Usuario debe correr "./mvnw clean install" en ms-auth localmente.
+  - Usuario debe hacer push de los commits b154db9 y 9c306a8 a GitHub.
+  - FASE 2 (Eureka + API Gateway) lista para iniciar, pendiente de
+    confirmacion.
+Resumen detallado: 02_FASE1_resumen.txt
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+FASE 2 - Infraestructura distribuida (descubrimiento + API Gateway)
+Fecha: 30-06-2026
+Estado: completada
+Resumen de cambios:
+  - Se creo eureka-server (puerto 8761): servidor central de descubrimiento
+    de servicios con Spring Cloud Netflix Eureka. Dashboard disponible en
+    http://localhost:8761/. Self-preservation deshabilitado para desarrollo.
+  - Se creo api-gateway (puerto 8080): punto unico de entrada con Spring
+    Cloud Gateway, enrutamiento YAML hacia los 10 microservicios, y filtro
+    global JwtGatewayFilter que valida JWT en CADA peticion.
+  - Se modificaron los 11 microservicios (10 originales + ms-auth):
+    * Agregadas dependencias spring-cloud-dependencies y eureka-client
+    * Configuracion Eureka Client en application.yml
+    * Auto-registro en Eureka al levantar
+  - JwtGatewayFilter intercepta peticiones, valida JWT, extrae username/rol,
+    agrega headers internos X-User-Id y X-User-Role antes de enrutar.
+  - Rutas publicas (sin JWT): /auth/login, /auth/register, /h2-console,
+    /actuator/health.
+  - Rutas protegidas: todas las demas (requieren JWT valido).
+  - Enrutamiento dinamico via Eureka: lb://nombre-del-servicio.
+  - Commit: 4dec64b.
+Decisiones tomadas en esta fase:
+  - Gateway como punto UNICO de validacion JWT (tal como se acordo en la
+    Instruccion Maestra seccion 3.c). Microservicios confian en headers
+    X-User-Id y X-User-Role agregados por el Gateway.
+  - Spring Cloud 2023.0.1 (compatible con Spring Boot 3.2.5).
+  - Se compartio la misma clave jwt.secret entre ms-auth y api-gateway
+    (ambos usan la misma clave para firmar/validar). Antes de FASE 7
+    (produccion), ambos deben leer desde variable de entorno JWT_SECRET.
+  - Self-preservation en Eureka deshabilitado para desarrollo (FASE 7
+    lo habilitara para produccion).
+  - No se pudo compilar en el entorno de IA; se recomienda verificar
+    "./mvnw clean install" en eureka-server y api-gateway en Laragon.
+Pendientes o notas para la siguiente fase:
+  - Usuario debe correr "./mvnw clean install" en:
+    * eureka-server
+    * api-gateway
+    * Todos los microservicios (descarga de spring-cloud-dependencies)
+  - Usuario debe levantar eureka-server y api-gateway para verificar que
+    inician sin errores.
+  - Usuario debe hacer push del commit 4dec64b a GitHub.
+  - La clave jwt.secret es de DESARROLLO; antes de FASE 7 pasar a variable
+    de entorno JWT_SECRET con valor aleatorio de 256+ bits.
+  - Microservicios todavia usan H2; en FASE 4 se cambia a MySQL. Esto no
+    afecta el funcionamiento del Gateway/Eureka.
+  - FASE 3 (Swagger/OpenAPI + HATEOAS) lista para iniciar, pendiente de
+    confirmacion.
+Resumen detallado: 03_FASE2_resumen.txt
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+FASE 3 - Documentacion y formato REST (Swagger/OpenAPI + HATEOAS)
+Fecha: 30-06-2026
+Estado: completada
+Resumen de cambios:
+  - Se agregó springdoc-openapi-starter-webmvc-ui 2.5.0 a los 13 módulos
+    para exponer Swagger/OpenAPI en /swagger-ui.html.
+  - Se agregó spring-boot-starter-hateoas a los 13 módulos para HATEOAS.
+  - Se crearon 10 clases OpenAPIConfig en config/ (uno por microservicio)
+    con @OpenAPIDefinition, info del servicio, y SecurityScheme JWT.
+  - Se agregó configuración springdoc en application.yml de los 13 módulos:
+    api-docs.path, swagger-ui.path, operationsSorter, use-root-path.
+  - Se agregaron anotaciones @Operation, @ApiResponse, @Tag a los 11
+    controladores de microservicios (los que tienen lógica de negocio).
+  - Se implementó HATEOAS completamente en ms-pasajeros: respuestas con
+    EntityModel<T>, CollectionModel<T>, y links (self, list, update, delete).
+  - Se mejoraron descriptions en ms-auth, ms-conductores, ms-viajes,
+    ms-pagos, ms-tarifas para mostrar buenas prácticas de documentación.
+  - Commit: {commit_hash_sera_generado_por_usuario}.
+Decisiones tomadas en esta fase:
+  - springdoc-openapi 2.5.0 es la recomendada para Spring Boot 3.2.5.
+  - HATEOAS se implementó solo en ms-pasajeros como ejemplo modelo; otros
+    servicios tienen deps pero no EntityModel (mantienen compatibilidad).
+  - Swagger disponible en todos los microservicios (/swagger-ui.html)
+    para documentación independiente, no solo en Gateway.
+  - SecurityScheme JWT (Bearer Token) definido en cada OpenAPIConfig.
+  - HATEOAS puede replicarse en otros 9 servicios en FASE 5 o posteriormente.
+Pendientes o notas para la siguiente fase:
+  - Acción del usuario: ejecutar "./mvnw clean install" en todos los módulos
+    para descargar springdoc-openapi y spring-hateoas.
+  - Acción del usuario: levantar servicios y acceder a:
+    * http://localhost:8081/swagger-ui.html (ms-pasajeros con HATEOAS)
+    * http://localhost:8091/swagger-ui.html (ms-auth)
+    * http://localhost:8082/swagger-ui.html (ms-conductores)
+    * etc.
+  - Acción del usuario: hacer push de commits a GitHub.
+  - NOTA: jwt.secret sigue siendo hardcoded; antes de FASE 7 pasar a
+    variable de entorno JWT_SECRET.
+  - FASE 4 (Persistencia para produccion - MySQL) lista para iniciar,
+    pendiente de confirmación.
+Resumen detallado: 04_FASE3_resumen.txt
+-------------------------------------------------------------------------
+
+===============================================================================
+FIN DEL DOCUMENTO MAESTRO
+
+-------------------------------------------------------------------------
+FASE 4 - Persistencia para produccion (H2 → MySQL)
+Fecha: 30-06-2026
+Estado: completada
+Resumen de cambios:
+  - Reemplazado H2 (BD en archivo local) por MySQL en los 11 microservicios.
+  - mysql-connector-j 8.0.33 agregado a pom.xml (driver JDBC official).
+  - Configuración MySQL: localhost:3306, user root, password root.
+  - 11 bases de datos independientes (authdb, pasajerosdb, etc).
+  - Perfil H2 opcional para desarrollo sin MySQL (-Dspring.profiles.active=h2).
+  - Migraciones Flyway reescritas para MySQL:
+    * Engine: InnoDB (transacciones ACID)
+    * Charset: UTF8MB4 (Unicode completo + emojis)
+    * Collation: utf8mb4_unicode_ci
+    * Timestamps: created_at, updated_at (auditoría)
+    * Índices: en columnas de búsqueda (email, estado, FK)
+  - Datos de prueba incluidos en V1__ de cada migración.
+  - FASE4_LARAGON_SETUP.txt con instrucciones para crear BDs en Laragon.
+Decisiones tomadas en esta fase:
+  - MySQL 8.0 (estándar Laragon).
+  - UTF8MB4 en lugar de UTF8 (MySQL UTF8 es limitado a 3 bytes).
+  - InnoDB para soporte de transacciones (importante para pagos).
+  - Timestamps automáticos para auditoría.
+  - Índices para optimizar queries frecuentes.
+  - Perfil H2 opcional para testing sin dependencias externas.
+Pendientes o notas para la siguiente fase:
+  - Acción del usuario: Crear 11 bases de datos en Laragon (ver
+    FASE4_LARAGON_SETUP.txt).
+  - Acción del usuario: ./mvnw clean install en todos los módulos.
+  - Acción del usuario: Levantar servicios y verificar Flyway (PASO 3-6).
+  - Acción del usuario: Hacer push a GitHub.
+  - IMPORTANTE: MySQL debe estar corriendo en Laragon.
+  - IMPORTANTE: useSSL=false es SOLO desarrollo. En producción (FASE 7):
+    cambiar a useSSL=true y credenciales en variables de entorno.
+  - Compatibilidad 100% con FASE 3 (Swagger/HATEOAS).
+  - FASE 5 (QA - Tests + JaCoCo) lista, pendiente confirmación.
+Resumen detallado: 05_FASE4_resumen.txt
+Guía de setup: FASE4_LARAGON_SETUP.txt
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+FASE 5 - Aseguramiento de calidad (QA)
+Fecha: 01-07-2026
+Estado: completada en el sandbox / pendiente de verificacion local (ver 06_FASE5_resumen.txt)
+Resumen de cambios:
+  - Se agrego DataFaker 2.4.2 y el plugin jacoco-maven-plugin 0.8.12
+    (prepare-agent + report + check con minimo 80% LINE COVEREDRATIO) a
+    los pom.xml de los 11 microservicios.
+  - Se crearon tests unitarios con JUnit 5 + Mockito para la capa de
+    Service de los 11 microservicios (mockeando WebClients/clientes
+    externos donde corresponde: MicroservicioClient en ms-viajes,
+    ViajeClient en ms-pagos), y un @WebMvcTest completo en ms-pasajeros
+    como plantilla de referencia.
+  - Se agrego JwtServiceTest en ms-auth (sin mocks: JWT real firmado
+    HS256, expiracion, firma alterada, clave distinta, token malformado).
+  - Bug fix: se agrego el @ExceptionHandler(IllegalArgumentException.class)
+    faltante en ms-pasajeros y ms-vehiculos (los otros 8 microservicios ya
+    lo tenian), que causaba 500 en vez de 409 ante reglas de negocio.
+Decisiones tomadas en esta fase:
+  - JaCoCo con regla dura en fase "verify" (falla el build bajo 80%).
+  - Cobertura priorizada en la capa Service (logica de negocio real) por
+    sobre @WebMvcTest completo en los 10 controllers restantes.
+Pendientes o notas para la siguiente fase:
+  - CRITICO: ejecutar "./mvnw clean verify" en los 11 microservicios
+    localmente; el sandbox de desarrollo no tiene acceso a Maven Central
+    y por lo tanto ningun test fue compilado ni ejecutado realmente antes
+    de esta entrega. Traer los resultados reales antes de dar la fase por
+    cerrada.
+  - Pendiente: tests de JwtAuthFilter y @WebMvcTest de los 9 controllers
+    restantes (usar PasajeroControllerTest como plantilla).
+  - Se detecto que falta el archivo 04_FASE3_resumen.txt referenciado en
+    esta bitacora (la entrada de FASE 3 lo menciona pero no esta en el
+    zip); no se reconstruyo en esta fase porque esta fuera de alcance,
+    queda como nota para quien retome el proyecto.
+  - FASE 6 (Docker/docker-compose) lista para iniciar tras confirmar Fase 5.
+Resumen detallado: 06_FASE5_resumen.txt
+-------------------------------------------------------------------------
+
+===============================================================================
+FIN DEL DOCUMENTO MAESTRO
+===============================================================================

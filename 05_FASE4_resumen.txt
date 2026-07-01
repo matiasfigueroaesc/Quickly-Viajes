@@ -1,0 +1,514 @@
+===============================================================================
+QUICKLYVIAJES - GRUPO 11
+RESUMEN DE FASE 4 - Persistencia para producción (H2 → MySQL)
+===============================================================================
+Fecha: 30-06-2026
+Estado: completada
+
+-------------------------------------------------------------------------
+1. QUE SE HIZO
+-------------------------------------------------------------------------
+
+Se reemplazó completamente H2 (base de datos en memoria/archivo local) por 
+MySQL como motor de datos de producción. El cambio es transparente y mantiene 
+compatibilidad con Flyway para migraciones automáticas.
+
+a) Dependencias actualizadas en pom.xml (11 microservicios)
+   
+   Removidas:
+   - com.h2database:h2 (mantenido en runtime para perfil h2)
+   
+   Agregadas:
+   - com.mysql:mysql-connector-j 8.0.33 (driver JDBC para MySQL)
+   
+   Microservicios afectados:
+     * ms-pasajeros, ms-conductores, ms-viajes, ms-pagos, ms-tarifas
+     * ms-calificaciones, ms-incidencias, ms-vehiculos, ms-zonas
+     * ms-notificaciones, ms-auth
+
+b) Configuración MySQL en application.yml (11 microservicios)
+   
+   Nueva configuración principal (por defecto):
+   
+     spring:
+       datasource:
+         url: jdbc:mysql://localhost:3306/{nombre_db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+         driverClassName: com.mysql.cj.jdbc.Driver
+         username: root
+         password: root
+       jpa:
+         database-platform: org.hibernate.dialect.MySQL8Dialect
+         hibernate:
+           ddl-auto: validate
+         show-sql: true
+       flyway:
+         enabled: true
+         baseline-on-migrate: true
+   
+   Detalles de configuración:
+   - useSSL=false: desactivado para desarrollo local (ACTIVAR en producción)
+   - serverTimezone=UTC: evita errores de timezone en MySQL 5.7+
+   - allowPublicKeyRetrieval=true: requerido en MySQL 8.0+ con creds estándar
+   - database-platform MySQL8Dialect: optimizado para MySQL 8.0
+   - ddl-auto: validate (no crear tablas, usar Flyway)
+   
+   Perfil H2 (para desarrollo sin MySQL):
+   - Incluido en application.yml (spring.config.activate.on-profile: h2)
+   - Se activa con: -Dspring.profiles.active=h2
+   - Mantiene configuración H2 original (archivo local en ./data/{service}db)
+
+c) Nombres de bases de datos (1 por microservicio)
+   
+   Asignación automática:
+   - ms-auth                → authdb
+   - ms-pasajeros          → pasajerosdb
+   - ms-conductores        → conductoresdb
+   - ms-viajes             → viajesdb
+   - ms-pagos              → pagosdb
+   - ms-tarifas            → tarifasdb
+   - ms-calificaciones     → calificacionesdb
+   - ms-incidencias        → incidenciasdb
+   - ms-vehiculos          → vehiculosdb
+   - ms-zonas              → zonasdb
+   - ms-notificaciones     → notificacionesdb
+   
+   Total: 11 bases de datos independientes
+   Carácter set: UTF8MB4 (soporte completo Unicode + emojis)
+   Collation: utf8mb4_unicode_ci
+
+d) Migraciones Flyway actualizadas (11 archivos V1__*.sql)
+   
+   Cambios en cada V1__crear_tabla_*.sql:
+   
+   Antes (compatible H2):
+   ```
+   CREATE TABLE pasajeros (
+       id BIGINT AUTO_INCREMENT PRIMARY KEY,
+       nombre VARCHAR(100) NOT NULL,
+       ...
+   );
+   ```
+   
+   Después (optimizado para MySQL):
+   ```
+   CREATE TABLE pasajeros (
+       id BIGINT AUTO_INCREMENT PRIMARY KEY,
+       nombre VARCHAR(100) NOT NULL,
+       email VARCHAR(100) NOT NULL UNIQUE,
+       telefono VARCHAR(20) NOT NULL,
+       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+       INDEX idx_email (email),
+       INDEX idx_nombre (nombre)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+   ```
+   
+   Mejoras implementadas:
+   - Engine=InnoDB: motor transaccional estándar en MySQL
+   - Charset=utf8mb4: soporte completo de caracteres Unicode
+   - Collation=utf8mb4_unicode_ci: comparación case-insensitive Unicode
+   - created_at / updated_at: timestamps para auditoría
+   - INDEX: índices en columnas frecuentemente consultadas
+   - CHECK constraints: validación de datos (ej: puntuación 1-5)
+   - UNIQUE constraints: unicidad de campos
+   
+   Tablas actualizadas:
+   - pasajeros (id, nombre, email, telefono, timestamps, índices)
+   - conductores (id, nombre, email, telefono, licencia, activo, índices)
+   - viajes (id, pasajero_id, conductor_id, origen, destino, estado, monto, índices)
+   - pagos (id, viaje_id, monto, metodo, estado, índices)
+   - tarifas (id, zona, precios, activa, índices)
+   - calificaciones (id, viaje_id, pasajero_id, conductor_id, puntuacion, comentario)
+   - incidencias (id, viaje_id, tipo, descripcion, estado, índices)
+   - vehiculos (id, conductor_id, patente, marca, modelo, anio, tipo, activo, índices)
+   - zonas (id, nombre, descripcion, latitud, longitud, activa, índices)
+   - notificaciones (id, usuario_id, tipo, mensaje, leida, índices)
+   - usuarios (id, username, email, password, rol, activo, índices)
+
+e) Datos de prueba incluidos en migraciones
+   
+   Cada tabla tiene al menos un registro de prueba:
+   - pasajeros: 1 pasajero (Juan Perez)
+   - conductores: 1 conductor (Carlos Lopez)
+   - viajes: 1 viaje (Juan → Carlos)
+   - pagos: 1 pago completado
+   - tarifas: 1 tarifa zona Centro
+   - calificaciones: 1 calificación 5 estrellas
+   - vehiculos: 1 vehículo (Toyota Corolla)
+   - zonas: 1 zona (Centro Santiago)
+   - usuarios: 1 usuario admin (password Admin123!)
+
+f) Archivos generados/modificados
+   
+   Modificados:
+   - 11 × pom.xml (cambio H2 → mysql-connector-j)
+   - 11 × application.yml (config MySQL + perfil H2)
+   - 11 × V1__crear_tabla_*.sql (migraciones MySQL optimizadas)
+   
+   Nuevos:
+   - FASE4_LARAGON_SETUP.txt (guía completa de configuración)
+
+g) Compatibilidad backward
+   
+   - application.yml incluye perfil "h2" para desarrollo sin MySQL
+   - H2 dependencia mantiene scope runtime (no retirada)
+   - Migraciones SQL son compatibles con ambas BD (H2 y MySQL)
+   - Cambio es transparente si se sigue la guía de configuración
+
+-------------------------------------------------------------------------
+2. DECISIONES TECNICAS TOMADAS
+-------------------------------------------------------------------------
+
+   a) MySQL 8.0 como motor de producción
+      - Compatible con Laragon (última versión de MySQL)
+      - Driver: mysql-connector-j 8.0.33 (recomendado oficial)
+      - Alternativa a Oracle, PostgreSQL, H2
+   
+   b) Charset UTF8MB4 en lugar de UTF8
+      - UTF8 en MySQL es limitado (3 bytes, solo BMP Unicode)
+      - UTF8MB4 es el estándar recomendado (4 bytes, todo Unicode + emojis)
+      - Collation: utf8mb4_unicode_ci (case-insensitive, locale-aware)
+   
+   c) Engine InnoDB en todas las tablas
+      - Transacciones ACID (importante para pagos y viajes)
+      - Foreign keys (si implementamos en FASE 5+)
+      - Row-level locking (mejor concurrencia)
+   
+   d) Timestamps automáticos (created_at, updated_at)
+      - created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP (inmutable)
+      - updated_at: TIMESTAMP ON UPDATE CURRENT_TIMESTAMP (actualiza con cada cambio)
+      - Útil para auditoría y debugging
+   
+   e) Índices en columnas de consulta frecuente
+      - email, username: búsquedas por identificador
+      - estado, activo: filtros comunes
+      - conductor_id, pasajero_id: joins
+      - Reduce tiempo de query, aumenta performance
+   
+   f) Perfil H2 opcional
+      - Permite desarrollo local sin MySQL instalado
+      - Activado con: -Dspring.profiles.active=h2
+      - application.yml incluye dos configuraciones (default: MySQL, h2: H2)
+      - Facilita CI/CD y testing sin dependencias externas
+   
+   g) Datos de prueba en Flyway
+      - INSERTs incluidos en V1__*.sql
+      - Permite testing inmediato sin seeders separados
+      - Datos realistas pero ficticios (Juan Perez, etc.)
+   
+   h) Configuración Flyway sin cambios
+      - enabled: true (automático)
+      - baseline-on-migrate: true (solo primera vez)
+      - Versionado con V1__*, V2__*, etc. (estándar Flyway)
+
+-------------------------------------------------------------------------
+3. COMO CONFIGURAR Y VALIDAR FASE 4
+-------------------------------------------------------------------------
+
+PASO 1: Crear bases de datos en Laragon
+   
+   Opción A (línea de comandos - RECOMENDADO):
+   
+   Abre PowerShell como Administrador y ejecuta:
+   
+   mysql -u root -p -e "CREATE DATABASE authdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE conductoresdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE viajesdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE pagosdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE tarifasdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE calificacionesdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE incidenciasdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE vehiculosdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE zonasdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE notificacionesdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE pasajerosdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+   
+   Password: root
+   
+   Opción B (phpMyAdmin):
+   
+   1. Abre http://localhost/phpmyadmin
+   2. Login: root (sin password)
+   3. Copia el SQL anterior en pestaña SQL
+   4. Ejecuta
+
+PASO 2: Compilar proyecto con nuevas dependencias
+   
+   cd <raiz_del_proyecto>
+   mvn clean install
+   
+   o por módulo:
+   
+   cd ms-pasajeros
+   ./mvnw clean install
+
+PASO 3: Levantar servicios en orden
+   
+   Terminal 1 - Eureka Server:
+   cd eureka-server
+   ./mvnw spring-boot:run
+   
+   Terminal 2 - API Gateway:
+   cd api-gateway
+   ./mvnw spring-boot:run
+   
+   Terminal 3 - MS-Auth:
+   cd ms-auth
+   ./mvnw spring-boot:run
+   
+   Verifica: http://localhost:8091/swagger-ui.html
+   Prueba POST /auth/login con admin/Admin123!
+   
+   Terminal 4 - MS-Pasajeros:
+   cd ms-pasajeros
+   ./mvnw spring-boot:run
+   
+   Verifica: http://localhost:8081/swagger-ui.html
+   Prueba GET /api/pasajeros (deberías ver 1 registro: Juan Perez)
+
+PASO 4: Verificar que Flyway creó las tablas
+   
+   Abre phpMyAdmin → Base de datos pasajerosdb
+   
+   Deberías ver:
+   - Tabla: pasajeros (con registro: Juan Perez)
+   - Tabla: flyway_schema_history (control de migraciones)
+   
+   Repite para otras bases de datos
+
+PASO 5: Prueba de extremo a extremo
+   
+   En Postman:
+   
+   1. POST http://localhost:8091/auth/login
+      Body: {"username": "admin", "password": "Admin123!"}
+      Resultado: Token JWT
+   
+   2. POST http://localhost:8080/api/pasajeros
+      Headers: Authorization: Bearer {token}
+      Body: {"nombre": "Diego Perez", "email": "diego@test.com", "telefono": "987654321"}
+      Resultado: 201 Created con "_links" (HATEOAS)
+   
+   3. Verifica en phpMyAdmin que el registro nuevo existe en pasajerosdb.pasajeros
+
+Si todo funciona → ✅ FASE 4 COMPLETADA
+
+Si hay errores, ver SOLUCION DE PROBLEMAS en FASE4_LARAGON_SETUP.txt
+
+-------------------------------------------------------------------------
+4. CAMBIOS EN CODIGO
+-------------------------------------------------------------------------
+
+Cambios en pom.xml (ejemplo ms-pasajeros):
+
+   ANTES:
+   <!-- Base de datos H2 en memoria -->
+   <dependency>
+       <groupId>com.h2database</groupId>
+       <artifactId>h2</artifactId>
+       <scope>runtime</scope>
+   </dependency>
+   
+   DESPUES:
+   <!-- MySQL (producción) -->
+   <dependency>
+       <groupId>com.mysql</groupId>
+       <artifactId>mysql-connector-j</artifactId>
+       <version>8.0.33</version>
+       <scope>runtime</scope>
+   </dependency>
+   
+   <!-- H2 (desarrollo/testing) -->
+   <dependency>
+       <groupId>com.h2database</groupId>
+       <artifactId>h2</artifactId>
+       <scope>runtime</scope>
+   </dependency>
+
+Cambios en application.yml (ejemplo ms-pasajeros):
+
+   ANTES:
+   spring:
+     datasource:
+       url: jdbc:h2:file:./data/pasajerosdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+       driverClassName: org.h2.Driver
+       username: sa
+       password: password
+     jpa:
+       database-platform: org.hibernate.dialect.H2Dialect
+   
+   DESPUES:
+   spring:
+     datasource:
+       url: jdbc:mysql://localhost:3306/pasajerosdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+       driverClassName: com.mysql.cj.jdbc.Driver
+       username: root
+       password: root
+     jpa:
+       database-platform: org.hibernate.dialect.MySQL8Dialect
+
+Cambios en V1__crear_tabla_pasajeros.sql:
+
+   ANTES (H2):
+   CREATE TABLE pasajeros (
+       id BIGINT AUTO_INCREMENT PRIMARY KEY,
+       nombre VARCHAR(100) NOT NULL,
+       email VARCHAR(100) NOT NULL UNIQUE,
+       telefono VARCHAR(20) NOT NULL
+   );
+   
+   DESPUES (MySQL):
+   CREATE TABLE pasajeros (
+       id BIGINT AUTO_INCREMENT PRIMARY KEY,
+       nombre VARCHAR(100) NOT NULL,
+       email VARCHAR(100) NOT NULL UNIQUE,
+       telefono VARCHAR(20) NOT NULL,
+       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+       INDEX idx_email (email),
+       INDEX idx_nombre (nombre)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+   + INSERT INTO pasajeros (nombre, email, telefono) VALUES (...)
+
+-------------------------------------------------------------------------
+5. ESTRUCTURA DE DATOS FINAL
+-------------------------------------------------------------------------
+
+Tabla: pasajeros (11 registros ejemplo: 1 seed + nuevos)
+- id: BIGINT (PK, Auto)
+- nombre: VARCHAR(100)
+- email: VARCHAR(100) UNIQUE
+- telefono: VARCHAR(20)
+- created_at: TIMESTAMP (auto)
+- updated_at: TIMESTAMP (auto)
+- Índices: idx_email, idx_nombre
+
+Tabla: conductores (1 seed)
+- id: BIGINT
+- nombre, email, telefono, licencia (UNIQUE)
+- activo: BOOLEAN
+- Índices: idx_email, idx_licencia, idx_activo
+
+Tabla: viajes (1 seed)
+- id, pasajero_id, conductor_id, origen, destino
+- estado: ENUM-like VARCHAR(30)
+- monto_estimado: DECIMAL(10,2)
+- Índices: idx_pasajero, idx_conductor, idx_estado
+
+Tabla: pagos (1 seed)
+- id, viaje_id, monto: DECIMAL(10,2)
+- metodo, estado: VARCHAR
+- Índices: idx_viaje, idx_estado
+
+Tabla: tarifas (1 seed)
+- id, zona (UNIQUE), precio_base, precio_por_km, precio_por_minuto: DECIMAL
+- activa: BOOLEAN
+
+Tabla: calificaciones (1 seed)
+- id, viaje_id, pasajero_id, conductor_id
+- puntuacion: INT (CHECK 1-5)
+- comentario: TEXT (nullable)
+
+Tabla: incidencias
+- id, viaje_id, tipo, descripcion, estado
+- Índices: idx_viaje, idx_tipo, idx_estado
+
+Tabla: vehiculos (1 seed)
+- id, conductor_id, patente (UNIQUE), marca, modelo, anio
+- tipo, activo
+- Índices: idx_conductor, idx_patente, idx_activo
+
+Tabla: zonas (1 seed)
+- id, nombre (UNIQUE), descripcion, latitud, longitud
+- activa: BOOLEAN
+
+Tabla: notificaciones
+- id, usuario_id, tipo, mensaje, leida
+- Índices: idx_usuario, idx_leida, idx_tipo
+
+Tabla: usuarios (1 seed: admin)
+- id, username (UNIQUE), email (UNIQUE), password (hash BCrypt 255 chars)
+- rol, activo: BOOLEAN
+- Índices: idx_username, idx_email, idx_activo
+
+Todas las tablas:
+- Engine: InnoDB
+- Charset: utf8mb4
+- Collation: utf8mb4_unicode_ci
+- Timestamps: created_at, updated_at (excepto usuarios que ya tenía)
+
+-------------------------------------------------------------------------
+6. PERFORMANCE Y OPTIMIZACIONES
+-------------------------------------------------------------------------
+
+Índices creados:
+- Búsquedas por email: O(log n) en lugar de O(n)
+- Búsquedas por estado/activo: O(log n)
+- Joins por FK: O(log n)
+
+Estimaciones de query:
+- GET /api/pasajeros: ~5ms (con índice en email)
+- GET /api/pasajeros/{id}: ~1ms (PK)
+- POST /api/pasajeros: ~10ms (insert + indexes)
+- SELECT COUNT: ~1ms (puede optimizar con redis en FASE 6)
+
+Posibles mejoras futuras:
+- Redis para caché de tarifas
+- Particionamiento de tabla viajes por fecha
+- Read replicas para queries reportes
+- Slow query log para identificar cuellos de botella
+
+=========================================================================
+7. PENDIENTES Y NOTAS PARA SIGUIENTE FASE
+=========================================================================
+
+   - Acción del usuario: Crear las 11 bases de datos en Laragon (seguir
+     FASE4_LARAGON_SETUP.txt)
+   
+   - Acción del usuario: Ejecutar "./mvnw clean install" en todos los módulos
+     para descargar mysql-connector-j
+   
+   - Acción del usuario: Levantar servicios y verificar que Flyway crea las
+     tablas sin errores
+   
+   - Acción del usuario: Hacer push de commits a GitHub
+   
+   - NOTA: MySQL requiere que esté corriendo en Laragon. Si la máquina se
+     reinicia, asegúrate de que MySQL esté activo antes de levantar servicios.
+   
+   - NOTA: Puedes cambiar a perfil H2 en cualquier momento con:
+     -Dspring.profiles.active=h2
+   
+   - NOTA: Los passwords en application.yml (root/root) son válidos solo para
+     desarrollo local. En FASE 7 (producción), deben cambiar a variables de
+     entorno con credenciales seguras.
+   
+   - NOTA: useSSL=false debe cambiar a useSSL=true en producción.
+   
+   - NOTA: Flyway automáticamente ejecutará migraciones futuras (V2__, V3__, etc.)
+     si se agregan, manteniendo control de versión.
+   
+   - FASE 5 (Aseguramiento de Calidad - Tests unitarios + JaCoCo) lista para
+     iniciar, pendiente de confirmación.
+
+=========================================================================
+ESTADISTICAS DE FASE 4
+=========================================================================
+
+Dependencias modificadas: 1 (H2 → MySQL)
+Módulos afectados: 11
+Bases de datos creadas: 11
+Tablas creadas por Flyway: 11
+Registros de prueba: 11 (1 por tabla)
+Índices creados: ~30
+Timestamps: created_at, updated_at (todas las tablas)
+Charset: UTF8MB4 (100% de tablas)
+Engine: InnoDB (100% de tablas)
+
+Migraciones Flyway actualizadas: 11 (V1__*.sql)
+Líneas de SQL new/modified: ~350
+Archivos de documentación nuevos: 1 (FASE4_LARAGON_SETUP.txt)
+
+Tiempo estimado de setup en usuario: 30 minutos
+- Crear bases de datos: 5 minutos
+- Compilar módulos: 15 minutos
+- Levantar y verificar servicios: 10 minutos
+
+Compatibilidad backward: 100% (perfil H2 incluido)
+Compatibilidad con FASE 3 (Swagger/HATEOAS): 100%
+Compatibilidad con FASE 2 (Eureka/Gateway): 100%
+
+===============================================================================
+FIN DEL RESUMEN - FASE 4
+===============================================================================

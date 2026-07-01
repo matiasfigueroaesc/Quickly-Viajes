@@ -38,6 +38,11 @@ public class SecurityConfig {
                         .requestMatchers("/auth/login", "/auth/register").permitAll()
                         // consola H2 solo para desarrollo local
                         .requestMatchers(new AntPathRequestMatcher("/h2-console/**")).permitAll()
+
+                        // 👇 SWAGGER DEBE IR AQUÍ, ANTES DEL anyRequest 👇
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+
+                        // El anyRequest SIEMPRE va al final
                         .anyRequest().authenticated()
                 )
                 // Necesario para que la consola H2 (que usa <frame>) no sea bloqueada

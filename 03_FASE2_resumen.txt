@@ -1,0 +1,274 @@
+===============================================================================
+QUICKLYVIAJES - GRUPO 11
+RESUMEN DE FASE 2 - Infraestructura distribuida (Eureka + API Gateway)
+===============================================================================
+Fecha: 30-06-2026
+Estado: completada
+
+-------------------------------------------------------------------------
+1. QUE SE HIZO
+-------------------------------------------------------------------------
+
+Se implemento la infraestructura de descubrimiento de servicios y enrutamiento
+centralizado, completando el pilar de seguridad (validacion JWT centralizada
+en el Gateway) acordado en la Instruccion Maestra (seccion 3.c).
+
+a) Eureka Server (puerto 8761)
+   - Modulo Maven nuevo: eureka-server (Spring Boot 3.2.5, Java 21).
+   - Dependencia: spring-cloud-starter-netflix-eureka-server.
+   - Anotacion: @EnableEurekaServer.
+   - Configuracion: servidor NO es cliente (registerWithEureka: false).
+   - Self-preservation: deshabilitado para desarrollo, se habilita en FASE 7.
+   - Dashboard disponible en http://localhost:8761/.
+
+b) API Gateway (puerto 8080)
+   - Modulo Maven nuevo: api-gateway (Spring Boot 3.2.5, Java 21).
+   - Dependencias:
+     * spring-cloud-starter-gateway (enrutamiento)
+     * spring-cloud-starter-netflix-eureka-client (descubrimiento)
+     * jjwt (validacion JWT)
+   - Punto único de entrada para el sistema (entrada por puerto 8080).
+   - Enrutamiento YAML a 10 microservicios (rewrite de rutas incluido).
+
+c) Validacion centralizada de JWT (JwtGatewayFilter)
+   - Filtro global que intercepta TODAS las peticiones.
+   - Rutas publicas (sin JWT): /auth/login, /auth/register, /h2-console,
+     /actuator/health.
+   - Rutas protegidas (requieren JWT): todas las demas.
+   - Si no hay token o es invalido: respuesta 401 Unauthorized.
+   - Si el token es valido:
+     * Extrae username y rol.
+     * Agrega headers internos X-User-Id y X-User-Role.
+     * Enruta hacia el microservicio (que confía en estos headers).
+
+d) JwtUtil (utilitario de JWT)
+   - isTokenValid(): valida firma HS256 y expiracion.
+   - extractUsername(): extrae el subject (username).
+   - extractRole(): extrae el custom claim "rol".
+   - Reutiliza la misma clave JWT que ms-auth.
+
+e) Descubrimiento dinamico (Eureka Client en todos los microservicios)
+   - Se agrego a los 10 microservicios existentes (sin cambiar su logica).
+   - Se agrego a ms-auth (que ya existía desde FASE 1).
+   - Cada microservicio se registra automaticamente al levantar.
+   - El Gateway descubre dinamicamente que instancias estan disponibles.
+
+f) Enrutamiento del Gateway (application.yml)
+   - Rutas configuradas para los 10 microservicios.
+   - Load balancing via lb://nombre-del-servicio (Eureka-aware).
+   - RewritePath para remover prefijo de ruta (ej: /auth/login -> /login).
+
+-------------------------------------------------------------------------
+2. DECISIONES TOMADAS EN ESTA FASE
+-------------------------------------------------------------------------
+
+   - Se uso Spring Cloud 2023.0.1 (compatible con Spring Boot 3.2.5).
+   - El Gateway valida JWT ANTES de enrutar (punto unico de validacion).
+   - Los microservicios NO validan JWT nuevamente (confían en el Gateway).
+   - Se agrego la misma clave jwt.secret del ms-auth al application.yml del
+     Gateway para validar tokens emitidos por ms-auth.
+   - Se deshabilito self-preservation en Eureka (desarrollo). En produccion
+     (FASE 7) se habilita para tolerance a fallos de red.
+   - El Gateway se configuro con discovery.locator.enabled: true para usar
+     Eureka automaticamente (no requiere configurar cada ruta manualmente).
+   - Se creo InstanceID personalizado en Eureka usando ${spring.application.name}
+     para mayor claridad en el dashboard.
+   - No se pudo compilar/ejecutar mvnw en el entorno de IA (sin acceso a
+     Maven Central). Se recomienda verificar build en Laragon local.
+
+-------------------------------------------------------------------------
+3. FLUJO DE AUTENTICACION Y AUTORIZACION
+-------------------------------------------------------------------------
+
+1. Cliente hace peticion al Gateway:
+   GET http://localhost:8080/pasajeros/listar
+   Headers: Authorization: Bearer <token>
+
+2. JwtGatewayFilter intercepta la peticion:
+   - ¿Es ruta publica? No → continuar validacion.
+   - ¿Existe header Authorization? Si → continuar.
+   - ¿Token valido? (firma + expiracion) Si → continuar.
+   - Extrae username y rol del token.
+   - Agrega headers: X-User-Id: diego, X-User-Role: PASAJERO
+   - Enruta hacia: lb://ms-pasajeros/listar
+
+3. Eureka resuelve lb://ms-pasajeros:
+   - Consulta registro de Eureka.
+   - Obtiene lista de instancias disponibles (ej: localhost:8081).
+   - Hace load-balancing (por ahora una sola instancia por servicio).
+
+4. ms-pasajeros recibe la peticion:
+   - Lee headers X-User-Id y X-User-Role (confia en el Gateway).
+   - Procesa la logica de negocio.
+   - Responde al cliente.
+
+Si en cualquier paso fallan: el cliente recibe 401 Unauthorized o 503 Service
+Unavailable.
+
+-------------------------------------------------------------------------
+4. CAMBIOS POR MICROSERVICIO
+-------------------------------------------------------------------------
+
+Los 10 microservicios recibieron los siguientes cambios uniformes:
+
+a) pom.xml
+   - Agregada propiedad: <spring-cloud.version>2023.0.1</spring-cloud.version>
+   - Agregado dependencyManagement con spring-cloud-dependencies.
+   - Agregada dependencia: spring-cloud-starter-netflix-eureka-client.
+
+b) application.yml
+   - Agregada seccion "eureka" con configuracion de cliente:
+     * service-url.defaultZone: http://localhost:8761/eureka/
+     * register-with-eureka: true
+     * fetch-registry: true
+     * instance-id: ${spring.application.name}:${random.value}
+
+Microservicios modificados:
+  1. ms-pasajeros
+  2. ms-conductores
+  3. ms-viajes
+  4. ms-pagos
+  5. ms-tarifas
+  6. ms-calificaciones
+  7. ms-incidencias
+  8. ms-vehiculos
+  9. ms-zonas
+  10. ms-notificaciones
+  11. ms-auth (tambien necesitaba ser cliente Eureka)
+
+Total: 11 microservicios + 2 nuevos (eureka-server, api-gateway) = 13 modulos.
+
+-------------------------------------------------------------------------
+5. ESTRUCTURA DE ARCHIVOS
+-------------------------------------------------------------------------
+
+Nuevas carpetas:
+
+eureka-server/
+├── pom.xml (spring-cloud-starter-netflix-eureka-server)
+├── mvnw, mvnw.cmd, .mvn/wrapper/
+├── src/main/java/com/duoc/eureka/
+│   └── EurekaServerApplication.java
+├── src/main/resources/
+│   └── application.yml (puerto 8761)
+├── .gitignore, .gitattributes
+└── (sin db/ migration ni tests, es un servidor puro)
+
+api-gateway/
+├── pom.xml (spring-cloud-starter-gateway, spring-cloud-starter-netflix-eureka-client)
+├── mvnw, mvnw.cmd, .mvn/wrapper/
+├── src/main/java/com/duoc/gateway/
+│   ├── ApiGatewayApplication.java (@EnableDiscoveryClient)
+│   ├── filter/
+│   │   └── JwtGatewayFilter.java (GlobalFilter, valida JWT)
+│   └── util/
+│       └── JwtUtil.java (extrae/valida tokens)
+├── src/main/resources/
+│   └── application.yml (puerto 8080, rutas a 10 microservicios)
+├── .gitignore, .gitattributes
+├── README.md (instrucciones detalladas de uso)
+└── (sin db/ migration, es stateless)
+
+Modificaciones en microservicios existentes:
+  ms-*/pom.xml → agregadas dependencias Spring Cloud
+  ms-*/src/main/resources/application.yml → agregada config Eureka
+
+-------------------------------------------------------------------------
+6. PRUEBAS DEL FLUJO COMPLETO (pasos para usuario)
+-------------------------------------------------------------------------
+
+1. Levantar Eureka Server:
+   cd eureka-server
+   ./mvnw spring-boot:run
+   Verificar: http://localhost:8761/ (dashboard vacio por ahora)
+
+2. Levantar API Gateway:
+   cd api-gateway
+   ./mvnw spring-boot:run
+   Verificar: http://localhost:8080/ (página de error esperada)
+
+3. Levantar ms-auth:
+   cd ms-auth
+   ./mvnw spring-boot:run
+   Verificar en Eureka dashboard: MS-AUTH → UP
+
+4. Registrar usuario:
+   curl -X POST http://localhost:8080/auth/register \
+     -H "Content-Type: application/json" \
+     -d '{"username":"diego","email":"diego@test.com","password":"Pass123!"}'
+
+5. Login y obtener token:
+   curl -X POST http://localhost:8080/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"username":"diego","password":"Pass123!"}'
+   
+   Respuesta: {"token":"eyJhbGc...","username":"diego","rol":"PASAJERO"}
+
+6. Usar token en ruta protegida:
+   curl -X GET http://localhost:8080/auth/me \
+     -H "Authorization: Bearer eyJhbGc..."
+   
+   Respuesta: {"id":1,"username":"diego",...}
+
+7. Levantar ms-pasajeros y probar:
+   cd ms-pasajeros
+   ./mvnw spring-boot:run
+   
+   curl -X GET http://localhost:8080/pasajeros/listar \
+     -H "Authorization: Bearer eyJhbGc..."
+   
+   ms-pasajeros recibira el request con headers internos X-User-Id, X-User-Role.
+
+Si todo funciona → FASE 2 completada exitosamente.
+
+-------------------------------------------------------------------------
+7. PENDIENTES / NOTAS PARA LA SIGUIENTE FASE
+-------------------------------------------------------------------------
+
+   - Accion del usuario: ejecutar "./mvnw clean install" en:
+     * eureka-server
+     * api-gateway
+     Y en TODOS los microservicios (para descarga de dependencias Spring Cloud).
+
+   - Accion del usuario: levantar Eureka Server y API Gateway (pasos 1-2 arriba)
+     y verificar que se inician sin errores.
+
+   - Accion del usuario: hacer push del commit 4dec64b (o equivalente) a la rama
+     main en GitHub.
+
+   - NOTA: La clave JWT (jwt.secret) es la MISMA en ms-auth y api-gateway por
+     ahora. Antes de FASE 7 (despliegue), ambos deben leer esta clave desde una
+     variable de entorno: JWT_SECRET.
+
+   - NOTA: Los microservicios todavia usan H2 en archivo local. En FASE 4 se
+     cambia a MySQL. Esto NO afecta el funcionamiento del Gateway/Eureka.
+
+   - FASE 3 (Swagger/OpenAPI) lista para iniciar, pendiente de confirmacion.
+
+=========================================================================
+ESTADISTICAS DE FASE 2
+=========================================================================
+
+Lineas de codigo creadas:
+  - eureka-server/pom.xml: 50 lineas
+  - eureka-server/EurekaServerApplication.java: 12 lineas
+  - eureka-server/application.yml: 12 lineas
+  - api-gateway/pom.xml: 95 lineas
+  - api-gateway/ApiGatewayApplication.java: 14 lineas
+  - api-gateway/JwtGatewayFilter.java: 90 lineas
+  - api-gateway/JwtUtil.java: 95 lineas
+  - api-gateway/application.yml: 90 lineas
+  - api-gateway/README.md: 350+ lineas (documentación)
+  - eureka-server/README.md: 300+ lineas (documentación)
+  
+Lineas modificadas en microservicios:
+  - 11 pom.xml: ~30 lineas por archivo (dependencyManagement + eureka-client)
+  - 11 application.yml: ~8 lineas por archivo (config Eureka)
+
+Microservicios impactados: 11 (los 9 originales + ms-auth + implícitamente todos)
+Nuevos modulos: 2 (eureka-server, api-gateway)
+Total modulos en el proyecto: 13 (10 microservicios + eureka-server + api-gateway)
+
+===============================================================================
+FIN DEL RESUMEN - FASE 2
+===============================================================================

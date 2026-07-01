@@ -12,10 +12,22 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/calificaciones")
 @RequiredArgsConstructor
+@Tag(name = "calificaciones", description = "Gestión de calificaciones")
+@SecurityRequirement(name = "Bearer Authentication")
 public class CalificacionController {
 
     private static final Logger log = LoggerFactory.getLogger(CalificacionController.class);
@@ -23,42 +35,102 @@ public class CalificacionController {
     private final CalificacionService service;
 
     // GET /api/calificaciones → lista todas
-    @GetMapping
+    @Operation(summary = "Get operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@GetMapping
     public ResponseEntity<List<Calificacion>> listar() {
         log.info("GET /api/calificaciones - solicitando lista de calificaciones");
         return ResponseEntity.ok(service.obtenerTodas());
     }
 
     // GET /api/calificaciones/{id} → busca por ID
-    @GetMapping("/{id}")
+    @Operation(summary = "Get operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@GetMapping("/{id}")
     public ResponseEntity<Calificacion> obtenerPorId(@PathVariable Long id) {
         log.info("GET /api/calificaciones/{} - buscando calificación", id);
         return ResponseEntity.ok(service.obtenerPorId(id));
     }
 
     // GET /api/calificaciones/conductor/{conductorId} → calificaciones de un conductor
-    @GetMapping("/conductor/{conductorId}")
+    @Operation(summary = "Get operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@GetMapping("/conductor/{conductorId}")
     public ResponseEntity<List<Calificacion>> obtenerPorConductor(@PathVariable Long conductorId) {
         log.info("GET /api/calificaciones/conductor/{} - listando calificaciones", conductorId);
         return ResponseEntity.ok(service.obtenerPorConductor(conductorId));
     }
 
     // GET /api/calificaciones/pasajero/{pasajeroId} → calificaciones de un pasajero
-    @GetMapping("/pasajero/{pasajeroId}")
+    @Operation(summary = "Get operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@GetMapping("/pasajero/{pasajeroId}")
     public ResponseEntity<List<Calificacion>> obtenerPorPasajero(@PathVariable Long pasajeroId) {
         log.info("GET /api/calificaciones/pasajero/{} - listando calificaciones", pasajeroId);
         return ResponseEntity.ok(service.obtenerPorPasajero(pasajeroId));
     }
 
     // GET /api/calificaciones/conductor/{conductorId}/promedio → promedio de un conductor
-    @GetMapping("/conductor/{conductorId}/promedio")
+    @Operation(summary = "Get operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@GetMapping("/conductor/{conductorId}/promedio")
     public ResponseEntity<Double> obtenerPromedioConductor(@PathVariable Long conductorId) {
         log.info("GET /api/calificaciones/conductor/{}/promedio - calculando promedio", conductorId);
         return ResponseEntity.ok(service.obtenerPromedioConductor(conductorId));
     }
 
     // POST /api/calificaciones → registra una nueva calificación
-    @PostMapping
+    @Operation(summary = "Post operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@PostMapping
     public ResponseEntity<Calificacion> crear(@Valid @RequestBody CalificacionDTO dto) {
         log.info("POST /api/calificaciones - registrando nueva calificación");
         Calificacion nueva = service.guardar(dto);
@@ -66,7 +138,17 @@ public class CalificacionController {
     }
 
     // PUT /api/calificaciones/{id} → actualiza puntaje y comentario
-    @PutMapping("/{id}")
+    @Operation(summary = "Put operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@PutMapping("/{id}")
     public ResponseEntity<Calificacion> actualizar(@PathVariable Long id,
                                                     @Valid @RequestBody CalificacionDTO dto) {
         log.info("PUT /api/calificaciones/{} - actualizando calificación", id);
@@ -74,7 +156,17 @@ public class CalificacionController {
     }
 
     // DELETE /api/calificaciones/{id} → elimina una calificación
-    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@DeleteMapping("/{id}")
     public ResponseEntity<String> eliminar(@PathVariable Long id) {
         log.info("DELETE /api/calificaciones/{} - eliminando calificación", id);
         service.eliminar(id);

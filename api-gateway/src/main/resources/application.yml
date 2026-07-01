@@ -1,0 +1,131 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lowerCaseServiceId: true
+      routes:
+        # Ruta para ms-auth (sin protección JWT para login y register)
+        # NOTA: a diferencia de los otros microservicios, AuthController usa
+        # @RequestMapping("/auth") internamente, por lo que NO se debe reescribir
+        # la ruta (ms-auth ya espera recibir /auth/login, /auth/register, etc.)
+        - id: auth-service
+          uri: lb://ms-auth
+          predicates:
+            - Path=/auth/**
+
+        # Ruta para ms-pasajeros
+        - id: pasajeros-service
+          uri: lb://ms-pasajeros
+          predicates:
+            - Path=/pasajeros/**
+          filters:
+            - RewritePath=/pasajeros/(?<segment>.*), /$\{segment}
+
+        # Ruta para ms-conductores
+        - id: conductores-service
+          uri: lb://ms-conductores
+          predicates:
+            - Path=/conductores/**
+          filters:
+            - RewritePath=/conductores/(?<segment>.*), /$\{segment}
+
+        # Ruta para ms-viajes
+        - id: viajes-service
+          uri: lb://ms-viajes
+          predicates:
+            - Path=/viajes/**
+          filters:
+            - RewritePath=/viajes/(?<segment>.*), /$\{segment}
+
+        # Ruta para ms-pagos
+        - id: pagos-service
+          uri: lb://ms-pagos
+          predicates:
+            - Path=/pagos/**
+          filters:
+            - RewritePath=/pagos/(?<segment>.*), /$\{segment}
+
+        # Ruta para ms-tarifas
+        - id: tarifas-service
+          uri: lb://ms-tarifas
+          predicates:
+            - Path=/tarifas/**
+          filters:
+            - RewritePath=/tarifas/(?<segment>.*), /$\{segment}
+
+        # Ruta para ms-calificaciones
+        - id: calificaciones-service
+          uri: lb://ms-calificaciones
+          predicates:
+            - Path=/calificaciones/**
+          filters:
+            - RewritePath=/calificaciones/(?<segment>.*), /$\{segment}
+
+        # Ruta para ms-incidencias
+        - id: incidencias-service
+          uri: lb://ms-incidencias
+          predicates:
+            - Path=/incidencias/**
+          filters:
+            - RewritePath=/incidencias/(?<segment>.*), /$\{segment}
+
+        # Ruta para ms-vehiculos
+        - id: vehiculos-service
+          uri: lb://ms-vehiculos
+          predicates:
+            - Path=/vehiculos/**
+          filters:
+            - RewritePath=/vehiculos/(?<segment>.*), /$\{segment}
+
+        # Ruta para ms-zonas
+        - id: zonas-service
+          uri: lb://ms-zonas
+          predicates:
+            - Path=/zonas/**
+          filters:
+            - RewritePath=/zonas/(?<segment>.*), /$\{segment}
+
+        # Ruta para ms-notificaciones
+        - id: notificaciones-service
+          uri: lb://ms-notificaciones
+          predicates:
+            - Path=/notificaciones/**
+          filters:
+            - RewritePath=/notificaciones/(?<segment>.*), /$\{segment}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    prefer-ip-address: false
+
+# Configuracion de JWT (misma clave que en ms-auth)
+# IMPORTANTE: jwt.secret es un valor de DESARROLLO. Antes de desplegar a
+# produccion, mover a una variable de entorno.
+jwt:
+  secret: "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.duoc.gateway: DEBUG
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    use-root-path: true
