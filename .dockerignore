@@ -1,0 +1,8 @@
+**/target
+**/.git
+**/.idea
+**/*.iml
+**/*.log
+**/.DS_Store
+data
+docker-data

@@ -12,10 +12,22 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/zonas")
 @RequiredArgsConstructor
+@Tag(name = "zonas", description = "Gestión de zonas")
+@SecurityRequirement(name = "Bearer Authentication")
 public class ZonaController {
 
     private static final Logger log = LoggerFactory.getLogger(ZonaController.class);
@@ -23,28 +35,68 @@ public class ZonaController {
     private final ZonaService service;
 
     // GET /api/zonas → lista todas las zonas
-    @GetMapping
+    @Operation(summary = "Get operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@GetMapping
     public ResponseEntity<List<Zona>> listar() {
         log.info("GET /api/zonas - solicitando lista de zonas");
         return ResponseEntity.ok(service.obtenerTodas());
     }
 
     // GET /api/zonas/activas → lista solo las zonas activas
-    @GetMapping("/activas")
+    @Operation(summary = "Get operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@GetMapping("/activas")
     public ResponseEntity<List<Zona>> listarActivas() {
         log.info("GET /api/zonas/activas - solicitando zonas activas");
         return ResponseEntity.ok(service.obtenerActivas());
     }
 
     // GET /api/zonas/{id} → busca una zona por ID
-    @GetMapping("/{id}")
+    @Operation(summary = "Get operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@GetMapping("/{id}")
     public ResponseEntity<Zona> obtenerPorId(@PathVariable Long id) {
         log.info("GET /api/zonas/{} - buscando zona", id);
         return ResponseEntity.ok(service.obtenerPorId(id));
     }
 
     // POST /api/zonas → crea una nueva zona
-    @PostMapping
+    @Operation(summary = "Post operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@PostMapping
     public ResponseEntity<Zona> crear(@Valid @RequestBody ZonaDTO dto) {
         log.info("POST /api/zonas - creando nueva zona");
         Zona nueva = service.guardar(dto);
@@ -52,7 +104,17 @@ public class ZonaController {
     }
 
     // PUT /api/zonas/{id} → actualiza una zona existente
-    @PutMapping("/{id}")
+    @Operation(summary = "Put operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@PutMapping("/{id}")
     public ResponseEntity<Zona> actualizar(@PathVariable Long id,
                                            @Valid @RequestBody ZonaDTO dto) {
         log.info("PUT /api/zonas/{} - actualizando zona", id);
@@ -60,7 +122,17 @@ public class ZonaController {
     }
 
     // DELETE /api/zonas/{id} → elimina una zona
-    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete operation", description = "Operation on resource")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@DeleteMapping("/{id}")
     public ResponseEntity<String> eliminar(@PathVariable Long id) {
         log.info("DELETE /api/zonas/{} - eliminando zona", id);
         service.eliminar(id);

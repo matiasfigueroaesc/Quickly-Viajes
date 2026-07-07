@@ -6,13 +6,24 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="eureka-server" />
+      </profile>
+      <profile name="Annotation profile for ms-zonas" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
+        </processorPath>
         <module name="ms-calificaciones" />
-        <module name="ms-conductores" />
+        <module name="ms-auth" />
         <module name="ms-notificaciones" />
-        <module name="ms-tarifas" />
+        <module name="ms-conductores" />
         <module name="ms-viajes" />
-        <module name="ms-pasajeros" />
+        <module name="ms-tarifas" />
         <module name="ms-zonas" />
+        <module name="ms-pasajeros" />
+        <module name="api-gateway" />
         <module name="ms-incidencias" />
         <module name="ms-pagos" />
         <module name="ms-vehiculos" />
@@ -21,6 +32,9 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="api-gateway" options="-parameters" />
+      <module name="eureka-server" options="-parameters" />
+      <module name="ms-auth" options="-parameters" />
       <module name="ms-calificaciones" options="-parameters" />
       <module name="ms-conductores" options="-parameters" />
       <module name="ms-incidencias" options="-parameters" />

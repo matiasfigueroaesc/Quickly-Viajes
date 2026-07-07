@@ -57,6 +57,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(respuesta);
     }
 
+    // Maneja reglas de negocio violadas (ej. patente duplicada) -> 409
+    // FIX FASE 5: este handler faltaba aqui (SI existia en los otros 8 microservicios),
+    // por lo que una patente duplicada devolvia 500 en vez de 409.
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> manejarReglaDeNegocio(IllegalArgumentException ex,
+                                                                 HttpServletRequest request) {
+        log.warn("Regla de negocio violada. Ruta: {} - Mensaje: {}", request.getRequestURI(), ex.getMessage());
+
+        ErrorResponse respuesta = new ErrorResponse();
+        respuesta.setFecha(LocalDateTime.now());
+        respuesta.setEstado(HttpStatus.CONFLICT.value());
+        respuesta.setError("Conflict");
+        respuesta.setMensaje(ex.getMessage());
+        respuesta.setRuta(request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(respuesta);
+    }
+
     // Maneja cualquier error inesperado → 500
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> manejarErrorGeneral(Exception ex,

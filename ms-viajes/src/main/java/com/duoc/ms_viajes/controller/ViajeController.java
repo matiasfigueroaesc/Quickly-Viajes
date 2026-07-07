@@ -13,10 +13,22 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/viajes")
 @RequiredArgsConstructor
+@Tag(name = "viajes", description = "Gestión de viajes")
+@SecurityRequirement(name = "Bearer Authentication")
 public class ViajeController {
 
     private static final Logger log = LoggerFactory.getLogger(ViajeController.class);
@@ -24,14 +36,34 @@ public class ViajeController {
     private final ViajeService service;
 
     // GET /api/viajes → lista todos los viajes
-    @GetMapping
+    @Operation(summary = "Obtener viajes", description = "Busca y retorna un registro de viajes")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@GetMapping
     public ResponseEntity<List<Viaje>> listar() {
         log.info("GET /api/viajes - solicitando lista de viajes");
         return ResponseEntity.ok(service.obtenerTodos());
     }
 
     // GET /api/viajes/{id} → busca viaje por ID (datos básicos)
-    @GetMapping("/{id}")
+    @Operation(summary = "Obtener viajes", description = "Busca y retorna un registro de viajes")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@GetMapping("/{id}")
     public ResponseEntity<Viaje> obtenerPorId(@PathVariable Long id) {
         log.info("GET /api/viajes/{} - buscando viaje", id);
         return ResponseEntity.ok(service.obtenerPorId(id));
@@ -41,28 +73,68 @@ public class ViajeController {
      * GET /api/viajes/{id}/detalle → retorna el viaje enriquecido con datos
      * de pasajero, conductor y tarifa consultados desde sus microservicios.
      */
-    @GetMapping("/{id}/detalle")
+    @Operation(summary = "Obtener viajes", description = "Busca y retorna un registro de viajes")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@GetMapping("/{id}/detalle")
     public ResponseEntity<ViajeDetalleDTO> obtenerDetalle(@PathVariable Long id) {
         log.info("GET /api/viajes/{}/detalle - solicitando detalle completo del viaje", id);
         return ResponseEntity.ok(service.obtenerDetallePorId(id));
     }
 
     // GET /api/viajes/pasajero/{pasajeroId} → historial de viajes de un pasajero
-    @GetMapping("/pasajero/{pasajeroId}")
+    @Operation(summary = "Obtener viajes", description = "Busca y retorna un registro de viajes")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@GetMapping("/pasajero/{pasajeroId}")
     public ResponseEntity<List<Viaje>> obtenerPorPasajero(@PathVariable Long pasajeroId) {
         log.info("GET /api/viajes/pasajero/{} - buscando viajes del pasajero", pasajeroId);
         return ResponseEntity.ok(service.obtenerPorPasajero(pasajeroId));
     }
 
     // GET /api/viajes/conductor/{conductorId} → historial de viajes de un conductor
-    @GetMapping("/conductor/{conductorId}")
+    @Operation(summary = "Obtener viajes", description = "Busca y retorna un registro de viajes")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@GetMapping("/conductor/{conductorId}")
     public ResponseEntity<List<Viaje>> obtenerPorConductor(@PathVariable Long conductorId) {
         log.info("GET /api/viajes/conductor/{} - buscando viajes del conductor", conductorId);
         return ResponseEntity.ok(service.obtenerPorConductor(conductorId));
     }
 
     // POST /api/viajes → crea un nuevo viaje
-    @PostMapping
+    @Operation(summary = "Crear nuevo viajes", description = "Crea un nuevo registro de viajes en el sistema")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@PostMapping
     public ResponseEntity<Viaje> crear(@Valid @RequestBody ViajeDTO dto) {
         log.info("POST /api/viajes - creando nuevo viaje");
         Viaje nuevo = service.guardar(dto);
@@ -70,7 +142,17 @@ public class ViajeController {
     }
 
     // PUT /api/viajes/{id} → actualiza un viaje existente
-    @PutMapping("/{id}")
+    @Operation(summary = "Actualizar viajes", description = "Actualiza un registro de viajes existente")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@PutMapping("/{id}")
     public ResponseEntity<Viaje> actualizar(@PathVariable Long id,
                                              @Valid @RequestBody ViajeDTO dto) {
         log.info("PUT /api/viajes/{} - actualizando viaje", id);
@@ -78,7 +160,17 @@ public class ViajeController {
     }
 
     // DELETE /api/viajes/{id} → elimina un viaje
-    @DeleteMapping("/{id}")
+    @Operation(summary = "Eliminar viajes", description = "Elimina un registro de viajes del sistema")
+
+@ApiResponses({
+
+    @ApiResponse(responseCode = "200", description = "Success"),
+
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
+
+})
+
+@DeleteMapping("/{id}")
     public ResponseEntity<String> eliminar(@PathVariable Long id) {
         log.info("DELETE /api/viajes/{} - eliminando viaje", id);
         service.eliminar(id);
