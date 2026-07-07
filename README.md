@@ -25,9 +25,9 @@ Más `eureka-server` (registro de servicios) y `api-gateway` (puerta de entrada 
 
 Requisitos: Docker y Docker Compose.
 
+Abre una terminal en la raíz del proyecto (donde está `docker-compose.yml`) y ejecuta:
+
 ```bash
-git clone <URL_DEL_REPOSITORIO>
-cd "proyecto evaluacion 3 terminado)"
 docker compose up --build
 ```
 
@@ -48,25 +48,27 @@ Para bajar todo y borrar los datos de MySQL:
 docker compose down -v
 ```
 
-## Rutas principales (vía API Gateway)
+## Rutas de referencia
 
-Todas las peticiones se hacen contra `http://localhost:18080`, no directo a los microservicios.
+Lo normal es probar todo a través del **API Gateway** (`http://localhost:18080`), que es el único punto de entrada protegido con JWT. Pero cada microservicio también expone su puerto directo por si quieres probarlo aislado con Postman o revisar su Swagger.
 
-| Ruta | Microservicio |
-|---|---|
-| `/auth/register`, `/auth/login`, `/auth/me` | ms-auth |
-| `/pasajeros/**` | ms-pasajeros |
-| `/conductores/**` | ms-conductores |
-| `/viajes/**` | ms-viajes |
-| `/pagos/**` | ms-pagos |
-| `/tarifas/**` | ms-tarifas |
-| `/calificaciones/**` | ms-calificaciones |
-| `/incidencias/**` | ms-incidencias |
-| `/vehiculos/**` | ms-vehiculos |
-| `/zonas/**` | ms-zonas |
-| `/notificaciones/**` | ms-notificaciones |
+| Microservicio | Ruta vía Gateway | Puerto directo | Swagger UI |
+|---|---|---|---|
+| ms-auth | `/auth/register`, `/auth/login`, `/auth/me` | 8091 | http://localhost:8091/swagger-ui.html |
+| ms-pasajeros | `/pasajeros/**` | 8081 | http://localhost:8081/swagger-ui.html |
+| ms-conductores | `/conductores/**` | 8082 | http://localhost:8082/swagger-ui.html |
+| ms-viajes | `/viajes/**` | 8083 | http://localhost:8083/swagger-ui.html |
+| ms-pagos | `/pagos/**` | 8084 | http://localhost:8084/swagger-ui.html |
+| ms-tarifas | `/tarifas/**` | 8085 | http://localhost:8085/swagger-ui.html |
+| ms-calificaciones | `/calificaciones/**` | 8086 | http://localhost:8086/swagger-ui.html |
+| ms-incidencias | `/incidencias/**` | 8087 | http://localhost:8087/swagger-ui.html |
+| ms-vehiculos | `/vehiculos/**` | 8088 | http://localhost:8088/swagger-ui.html |
+| ms-zonas | `/zonas/**` | 8089 | http://localhost:8089/swagger-ui.html |
+| ms-notificaciones | `/notificaciones/**` | 8090 | http://localhost:8090/swagger-ui.html |
 
 Cada ruta soporta las operaciones CRUD típicas (`GET`, `POST`, `PUT`, `DELETE`), salvo `ms-auth` que expone `register`, `login` y `me`.
+
+> Nota: si accedes directo por el puerto del microservicio (sin pasar por el Gateway), no hay validación JWT — es útil para pruebas rápidas, pero el flujo "real" del sistema siempre es a través del Gateway.
 
 ## Autenticación
 
@@ -77,3 +79,4 @@ Authorization: Bearer <token>
 ```
 
 El token se obtiene al hacer login en `/auth/login`.
+
