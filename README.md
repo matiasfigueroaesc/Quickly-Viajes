@@ -1,5 +1,13 @@
-# QuicklyViajes
-
+```
+                                                                                           
+  ▄▄▄▄           ▀           █      ▀▀█           ▄    ▄   ▀              ▀                
+ ▄▀  ▀▄ ▄   ▄  ▄▄▄     ▄▄▄   █   ▄    █    ▄   ▄  ▀▄  ▄▀ ▄▄▄     ▄▄▄    ▄▄▄    ▄▄▄    ▄▄▄  
+ █    █ █   █    █    █▀  ▀  █ ▄▀     █    ▀▄ ▄▀   █  █    █    ▀   █     █   █▀  █  █   ▀ 
+ █    █ █   █    █    █      █▀█      █     █▄█    ▀▄▄▀    █    ▄▀▀▀█     █   █▀▀▀▀   ▀▀▀▄ 
+  █▄▄█▀ ▀▄▄▀█  ▄▄█▄▄  ▀█▄▄▀  █  ▀▄    ▀▄▄   ▀█      ██   ▄▄█▄▄  ▀▄▄▀█     █   ▀█▄▄▀  ▀▄▄▄▀ 
+     █                                      ▄▀                            █                
+                                           ▀▀                           ▀▀                 
+```
 Backend de una plataforma de viajes (tipo ride-hailing) construido con arquitectura de microservicios en Spring Boot, con API Gateway, Eureka y MySQL. Todo el sistema corre en contenedores Docker.
 
 ## Integrantes
@@ -48,27 +56,43 @@ Para bajar todo y borrar los datos de MySQL:
 docker compose down -v
 ```
 
+> **Despliegue:** este proyecto se ejecuta de forma local mediante Docker Compose. Según la aclaración del docente sobre la Evaluación Final Transversal, el despliegue remoto (Render/Railway u otro) es opcional; el equipo optó por entrega 100% local.
+
 ## Rutas de referencia
 
-Lo normal es probar todo a través del **API Gateway** (`http://localhost:18080`), que es el único punto de entrada protegido con JWT. Pero cada microservicio también expone su puerto directo por si quieres probarlo aislado con Postman o revisar su Swagger.
+Todas las peticiones se hacen a través del **API Gateway**, único punto de entrada protegido con JWT:
 
-| Microservicio | Ruta vía Gateway | Puerto directo | Swagger UI |
-|---|---|---|---|
-| ms-auth | `/auth/register`, `/auth/login`, `/auth/me` | 8091 | http://localhost:8091/swagger-ui.html |
-| ms-pasajeros | `/pasajeros/**` | 8081 | http://localhost:8081/swagger-ui.html |
-| ms-conductores | `/conductores/**` | 8082 | http://localhost:8082/swagger-ui.html |
-| ms-viajes | `/viajes/**` | 8083 | http://localhost:8083/swagger-ui.html |
-| ms-pagos | `/pagos/**` | 8084 | http://localhost:8084/swagger-ui.html |
-| ms-tarifas | `/tarifas/**` | 8085 | http://localhost:8085/swagger-ui.html |
-| ms-calificaciones | `/calificaciones/**` | 8086 | http://localhost:8086/swagger-ui.html |
-| ms-incidencias | `/incidencias/**` | 8087 | http://localhost:8087/swagger-ui.html |
-| ms-vehiculos | `/vehiculos/**` | 8088 | http://localhost:8088/swagger-ui.html |
-| ms-zonas | `/zonas/**` | 8089 | http://localhost:8089/swagger-ui.html |
-| ms-notificaciones | `/notificaciones/**` | 8090 | http://localhost:8090/swagger-ui.html |
+**Base URL:** `http://localhost:18080`
+
+| Microservicio | Ruta vía Gateway | Puerto interno |
+|---|---|---|
+| ms-auth | `/auth/register`, `/auth/login`, `/auth/me` | 8091 |
+| ms-pasajeros | `/pasajeros/**` | 8081 |
+| ms-conductores | `/conductores/**` | 8082 |
+| ms-viajes | `/viajes/**` | 8083 |
+| ms-pagos | `/pagos/**` | 8084 |
+| ms-tarifas | `/tarifas/**` | 8085 |
+| ms-calificaciones | `/calificaciones/**` | 8086 |
+| ms-incidencias | `/incidencias/**` | 8087 |
+| ms-vehiculos | `/vehiculos/**` | 8088 |
+| ms-zonas | `/zonas/**` | 8089 |
+| ms-notificaciones | `/notificaciones/**` | 8090 |
 
 Cada ruta soporta las operaciones CRUD típicas (`GET`, `POST`, `PUT`, `DELETE`), salvo `ms-auth` que expone `register`, `login` y `me`.
 
-> Nota: si accedes directo por el puerto del microservicio (sin pasar por el Gateway), no hay validación JWT — es útil para pruebas rápidas, pero el flujo "real" del sistema siempre es a través del Gateway.
+## Documentación Swagger
+
+Cada microservicio expone su propia documentación OpenAPI/Swagger en su puerto interno:
+
+```
+http://localhost:<puerto>/swagger-ui.html
+```
+
+Por ejemplo, para `ms-notificaciones`:
+
+```
+http://localhost:8090/swagger-ui.html
+```
 
 ## Autenticación
 
@@ -79,4 +103,3 @@ Authorization: Bearer <token>
 ```
 
 El token se obtiene al hacer login en `/auth/login`.
-
