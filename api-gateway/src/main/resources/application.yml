@@ -1,0 +1,353 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lowerCaseServiceId: true
+      routes:
+        # Ruta para ms-auth (sin protección JWT para login y register)
+        # NOTA: a diferencia de los otros microservicios, AuthController usa
+        # @RequestMapping("/auth") internamente, por lo que NO se debe reescribir
+        # la ruta (ms-auth ya espera recibir /auth/login, /auth/register, etc.)
+        - id: auth-service
+          uri: lb://ms-auth
+          predicates:
+            - Path=/auth/**
+
+        # Ruta para ms-pasajeros
+        - id: pasajeros-service
+          uri: lb://ms-pasajeros
+          predicates:
+            - Path=/api/pasajeros,/api/pasajeros/**
+          filters:
+            - RewritePath=/api/pasajeros(?<segment>.*), /api/pasajeros${segment}
+        - id: pasajeros-service-alt
+          uri: lb://ms-pasajeros
+          predicates:
+            - Path=/pasajeros/**
+          filters:
+            - RewritePath=/pasajeros(?<segment>.*), /api/pasajeros${segment}
+        - id: pasajeros-service-exact
+          uri: lb://ms-pasajeros
+          predicates:
+            - Path=/api/pasajeros
+          filters:
+            - RewritePath=/api/pasajeros, /api/pasajeros
+
+        # Ruta para ms-conductores
+        - id: conductores-service
+          uri: lb://ms-conductores
+          predicates:
+            - Path=/api/conductores
+            - Path=/api/conductores/**
+          filters:
+            - RewritePath=/api/conductores(?<segment>.*), /api/conductores${segment}
+        - id: conductores-service-alt
+          uri: lb://ms-conductores
+          predicates:
+            - Path=/conductores/**
+          filters:
+            - RewritePath=/conductores(?<segment>.*), /api/conductores${segment}
+        - id: conductores-service-exact
+          uri: lb://ms-conductores
+          predicates:
+            - Path=/api/conductores
+          filters:
+            - RewritePath=/api/conductores, /api/conductores
+
+        # Ruta para ms-viajes
+        - id: viajes-service
+          uri: lb://ms-viajes
+          predicates:
+            - Path=/api/viajes,/api/viajes/**
+          filters:
+            - RewritePath=/api/viajes(?<segment>.*), /api/viajes${segment}
+        - id: viajes-service-alt
+          uri: lb://ms-viajes
+          predicates:
+            - Path=/viajes/**
+          filters:
+            - RewritePath=/viajes(?<segment>.*), /api/viajes${segment}
+        - id: viajes-service-exact
+          uri: lb://ms-viajes
+          predicates:
+            - Path=/api/viajes
+          filters:
+            - RewritePath=/api/viajes, /api/viajes
+
+        # Ruta para ms-pagos
+        - id: pagos-service
+          uri: lb://ms-pagos
+          predicates:
+            - Path=/api/pagos,/api/pagos/**
+          filters:
+            - RewritePath=/api/pagos(?<segment>.*), /api/pagos${segment}
+        - id: pagos-service-alt
+          uri: lb://ms-pagos
+          predicates:
+            - Path=/pagos/**
+          filters:
+            - RewritePath=/pagos(?<segment>.*), /api/pagos${segment}
+        - id: pagos-service-exact
+          uri: lb://ms-pagos
+          predicates:
+            - Path=/api/pagos
+          filters:
+            - RewritePath=/api/pagos, /api/pagos
+
+        # Ruta para ms-tarifas
+        - id: tarifas-service
+          uri: lb://ms-tarifas
+          predicates:
+            - Path=/api/tarifas,/api/tarifas/**
+          filters:
+            - RewritePath=/api/tarifas(?<segment>.*), /api/tarifas${segment}
+        - id: tarifas-service-alt
+          uri: lb://ms-tarifas
+          predicates:
+            - Path=/tarifas/**
+          filters:
+            - RewritePath=/tarifas(?<segment>.*), /api/tarifas${segment}
+        - id: tarifas-service-exact
+          uri: lb://ms-tarifas
+          predicates:
+            - Path=/api/tarifas
+          filters:
+            - RewritePath=/api/tarifas, /api/tarifas
+
+        # Ruta para ms-calificaciones
+        - id: calificaciones-service
+          uri: lb://ms-calificaciones
+          predicates:
+            - Path=/api/calificaciones,/api/calificaciones/**
+          filters:
+            - RewritePath=/api/calificaciones(?<segment>.*), /api/calificaciones${segment}
+        - id: calificaciones-service-alt
+          uri: lb://ms-calificaciones
+          predicates:
+            - Path=/calificaciones/**
+          filters:
+            - RewritePath=/calificaciones(?<segment>.*), /api/calificaciones${segment}
+        - id: calificaciones-service-exact
+          uri: lb://ms-calificaciones
+          predicates:
+            - Path=/api/calificaciones
+          filters:
+            - RewritePath=/api/calificaciones, /api/calificaciones
+
+        # Ruta para ms-incidencias
+        - id: incidencias-service
+          uri: lb://ms-incidencias
+          predicates:
+            - Path=/api/incidencias,/api/incidencias/**
+          filters:
+            - RewritePath=/api/incidencias(?<segment>.*), /api/incidencias${segment}
+        - id: incidencias-service-alt
+          uri: lb://ms-incidencias
+          predicates:
+            - Path=/incidencias/**
+          filters:
+            - RewritePath=/incidencias(?<segment>.*), /api/incidencias${segment}
+        - id: incidencias-service-exact
+          uri: lb://ms-incidencias
+          predicates:
+            - Path=/api/incidencias
+          filters:
+            - RewritePath=/api/incidencias, /api/incidencias
+
+        # Ruta para ms-vehiculos
+        - id: vehiculos-service
+          uri: lb://ms-vehiculos
+          predicates:
+            - Path=/api/vehiculos,/api/vehiculos/**
+          filters:
+            - RewritePath=/api/vehiculos(?<segment>.*), /api/vehiculos${segment}
+        - id: vehiculos-service-alt
+          uri: lb://ms-vehiculos
+          predicates:
+            - Path=/vehiculos/**
+          filters:
+            - RewritePath=/vehiculos(?<segment>.*), /api/vehiculos${segment}
+        - id: vehiculos-service-exact
+          uri: lb://ms-vehiculos
+          predicates:
+            - Path=/api/vehiculos
+          filters:
+            - RewritePath=/api/vehiculos, /api/vehiculos
+
+        # Ruta para ms-zonas
+        - id: zonas-service
+          uri: lb://ms-zonas
+          predicates:
+            - Path=/api/zonas,/api/zonas/**
+          filters:
+            - RewritePath=/api/zonas(?<segment>.*), /api/zonas${segment}
+        - id: zonas-service-alt
+          uri: lb://ms-zonas
+          predicates:
+            - Path=/zonas/**
+          filters:
+            - RewritePath=/zonas(?<segment>.*), /api/zonas${segment}
+        - id: zonas-service-exact
+          uri: lb://ms-zonas
+          predicates:
+            - Path=/api/zonas
+          filters:
+            - RewritePath=/api/zonas, /api/zonas
+
+        # Ruta para ms-notificaciones
+        - id: notificaciones-service
+          uri: lb://ms-notificaciones
+          predicates:
+            - Path=/api/notificaciones,/api/notificaciones/**
+          filters:
+            - RewritePath=/api/notificaciones(?<segment>.*), /api/notificaciones${segment}
+        - id: notificaciones-service-alt
+          uri: lb://ms-notificaciones
+          predicates:
+            - Path=/notificaciones/**
+          filters:
+            - RewritePath=/notificaciones(?<segment>.*), /api/notificaciones${segment}
+        - id: notificaciones-service-exact
+          uri: lb://ms-notificaciones
+          predicates:
+            - Path=/api/notificaciones
+          filters:
+            - RewritePath=/api/notificaciones, /api/notificaciones
+
+        # Routes to expose OpenAPI specs through the gateway to avoid CORS
+        - id: docs-ms-auth
+          uri: lb://ms-auth
+          predicates:
+            - Path=/docs/ms-auth/v3/api-docs
+          filters:
+            - RewritePath=/docs/ms-auth/v3/api-docs, /v3/api-docs
+
+        - id: docs-ms-pasajeros
+          uri: lb://ms-pasajeros
+          predicates:
+            - Path=/docs/ms-pasajeros/v3/api-docs
+          filters:
+            - RewritePath=/docs/ms-pasajeros/v3/api-docs, /v3/api-docs
+
+        - id: docs-ms-conductores
+          uri: lb://ms-conductores
+          predicates:
+            - Path=/docs/ms-conductores/v3/api-docs
+          filters:
+            - RewritePath=/docs/ms-conductores/v3/api-docs, /v3/api-docs
+
+        - id: docs-ms-viajes
+          uri: lb://ms-viajes
+          predicates:
+            - Path=/docs/ms-viajes/v3/api-docs
+          filters:
+            - RewritePath=/docs/ms-viajes/v3/api-docs, /v3/api-docs
+
+        - id: docs-ms-pagos
+          uri: lb://ms-pagos
+          predicates:
+            - Path=/docs/ms-pagos/v3/api-docs
+          filters:
+            - RewritePath=/docs/ms-pagos/v3/api-docs, /v3/api-docs
+
+        - id: docs-ms-tarifas
+          uri: lb://ms-tarifas
+          predicates:
+            - Path=/docs/ms-tarifas/v3/api-docs
+          filters:
+            - RewritePath=/docs/ms-tarifas/v3/api-docs, /v3/api-docs
+
+        - id: docs-ms-calificaciones
+          uri: lb://ms-calificaciones
+          predicates:
+            - Path=/docs/ms-calificaciones/v3/api-docs
+          filters:
+            - RewritePath=/docs/ms-calificaciones/v3/api-docs, /v3/api-docs
+
+        - id: docs-ms-incidencias
+          uri: lb://ms-incidencias
+          predicates:
+            - Path=/docs/ms-incidencias/v3/api-docs
+          filters:
+            - RewritePath=/docs/ms-incidencias/v3/api-docs, /v3/api-docs
+
+        - id: docs-ms-vehiculos
+          uri: lb://ms-vehiculos
+          predicates:
+            - Path=/docs/ms-vehiculos/v3/api-docs
+          filters:
+            - RewritePath=/docs/ms-vehiculos/v3/api-docs, /v3/api-docs
+
+        - id: docs-ms-zonas
+          uri: lb://ms-zonas
+          predicates:
+            - Path=/docs/ms-zonas/v3/api-docs
+          filters:
+            - RewritePath=/docs/ms-zonas/v3/api-docs, /v3/api-docs
+
+        - id: docs-ms-notificaciones
+          uri: lb://ms-notificaciones
+          predicates:
+            - Path=/docs/ms-notificaciones/v3/api-docs
+          filters:
+            - RewritePath=/docs/ms-notificaciones/v3/api-docs, /v3/api-docs
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    prefer-ip-address: false
+
+# Configuracion de JWT (misma clave que en ms-auth)
+# IMPORTANTE: jwt.secret es un valor de DESARROLLO. Antes de desplegar a
+# produccion, mover a una variable de entorno.
+jwt:
+  secret: "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.duoc.gateway: DEBUG
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    use-root-path: true
+    urls:
+      - name: ms-auth
+        url: /docs-proxy/ms-auth/v3/api-docs
+      - name: ms-pasajeros
+        url: /docs-proxy/ms-pasajeros/v3/api-docs
+      - name: ms-conductores
+        url: /docs-proxy/ms-conductores/v3/api-docs
+      - name: ms-viajes
+        url: /docs-proxy/ms-viajes/v3/api-docs
+      - name: ms-pagos
+        url: /docs-proxy/ms-pagos/v3/api-docs
+      - name: ms-tarifas
+        url: /docs-proxy/ms-tarifas/v3/api-docs
+      - name: ms-calificaciones
+        url: /docs-proxy/ms-calificaciones/v3/api-docs
+      - name: ms-incidencias
+        url: /docs-proxy/ms-incidencias/v3/api-docs
+      - name: ms-vehiculos
+        url: /docs-proxy/ms-vehiculos/v3/api-docs
+      - name: ms-zonas
+        url: /docs-proxy/ms-zonas/v3/api-docs
+      - name: ms-notificaciones
+        url: /docs-proxy/ms-notificaciones/v3/api-docs
