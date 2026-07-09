@@ -27,7 +27,12 @@ public class JwtGatewayFilter implements GlobalFilter, Ordered {
             "/auth/register",
             "/h2-console",
             "/actuator",
-            "/actuator/health"
+            "/actuator/health",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/webjars/**"
     );
 
     @Override

@@ -82,17 +82,28 @@ Cada ruta soporta las operaciones CRUD típicas (`GET`, `POST`, `PUT`, `DELETE`)
 
 ## Documentación Swagger
 
-Cada microservicio expone su propia documentación OpenAPI/Swagger en su puerto interno:
+Una vez levantados los contenedores, Swagger queda accesible directamente desde el navegador:
+
+- Gateway: http://localhost:18080/swagger-ui.html
+- Auth: http://localhost:8091/swagger-ui.html
+- Pasajeros: http://localhost:8081/swagger-ui.html
+- Conductores: http://localhost:8082/swagger-ui.html
+- Viajes: http://localhost:8083/swagger-ui.html
+- Pagos: http://localhost:8084/swagger-ui.html
+- Tarifas: http://localhost:8085/swagger-ui.html
+- Calificaciones: http://localhost:8086/swagger-ui.html
+- Incidencias: http://localhost:8087/swagger-ui.html
+- Vehículos: http://localhost:8088/swagger-ui.html
+- Zonas: http://localhost:8089/swagger-ui.html
+- Notificaciones: http://localhost:8090/swagger-ui.html
+
+Para probar endpoints protegidos, primero inicia sesión en:
 
 ```
-http://localhost:<puerto>/swagger-ui.html
+http://localhost:18080/auth/login
 ```
 
-Por ejemplo, para `ms-notificaciones`:
-
-```
-http://localhost:8090/swagger-ui.html
-```
+con un usuario registrado (por ejemplo `admin` / `Admin123!`) y copia el token JWT en el botón Authorize de Swagger.
 
 ## Autenticación
 
