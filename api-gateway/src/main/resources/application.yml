@@ -307,7 +307,7 @@ eureka:
     fetch-registry: true
   instance:
     instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
-    prefer-ip-address: false
+    prefer-ip-address: true
 
 # Configuracion de JWT (misma clave que en ms-auth)
 # IMPORTANTE: jwt.secret es un valor de DESARROLLO. Antes de desplegar a
