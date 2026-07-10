@@ -25,7 +25,7 @@ public class ApiDocsProxyController {
 
     @GetMapping(path = "/docs-proxy/{service}/v3/api-docs", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<String>> proxyApiDocs(@PathVariable String service) {
-        List<ServiceInstance> instances = discoveryClient.getInstances(service);
+        List<ServiceInstance> instances = discoveryClient.getInstances(service.toUpperCase());
         if (instances == null || instances.isEmpty()) {
             return Mono.just(ResponseEntity.status(503).body("{}"));
         }
