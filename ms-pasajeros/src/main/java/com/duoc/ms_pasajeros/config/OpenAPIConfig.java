@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Bean;
-import org.springdoc.core.customizers.OpenApiCustomiser;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import io.swagger.v3.oas.models.Paths;
 
 @Configuration
@@ -45,7 +45,7 @@ import io.swagger.v3.oas.models.Paths;
 public class OpenAPIConfig {
 
     @Bean
-    public OpenApiCustomiser removeApiPrefixFromPaths() {
+    public OpenApiCustomizer removeApiPrefixFromPaths() {
         return openApi -> {
             if (openApi.getPaths() == null) return;
             Paths newPaths = new Paths();
