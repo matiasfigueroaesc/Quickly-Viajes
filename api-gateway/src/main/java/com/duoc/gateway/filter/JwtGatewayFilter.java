@@ -34,6 +34,7 @@ public class JwtGatewayFilter implements GlobalFilter, Ordered {
             "/v3/api-docs/**",
             "/docs",
             "/docs/**",
+            "/docs-proxy/**",
             "/webjars/**"
     );
 
