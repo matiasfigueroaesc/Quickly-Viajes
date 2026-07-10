@@ -83,11 +83,13 @@ public class JwtGatewayFilter implements GlobalFilter, Ordered {
         return chain.filter(modifiedExchange);
     }
 
+    private final org.springframework.util.AntPathMatcher pathMatcher = new org.springframework.util.AntPathMatcher();
+
     /**
      * Verifica si la ruta es pública (no requiere autenticación).
      */
     private boolean isPublicRoute(String path) {
-        return PUBLIC_ROUTES.stream().anyMatch(path::startsWith);
+        return PUBLIC_ROUTES.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
     }
 
     /**
