@@ -331,9 +331,6 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: method
     use-root-path: true
-  gateway:
-    discovery:
-      enabled: false
     urls:
       - name: ms-auth
         url: /docs/ms-auth/v3/api-docs
@@ -357,3 +354,7 @@ springdoc:
         url: /docs/ms-zonas/v3/api-docs
       - name: ms-notificaciones
         url: /docs/ms-notificaciones/v3/api-docs
+
+  gateway:
+    discovery:
+      enabled: false
