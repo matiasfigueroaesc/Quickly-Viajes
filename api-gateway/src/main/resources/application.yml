@@ -331,26 +331,29 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: method
     use-root-path: true
+  gateway:
+    discovery:
+      enabled: false
     urls:
       - name: ms-auth
-        url: /docs-proxy/ms-auth/v3/api-docs
+        url: /docs/ms-auth/v3/api-docs
       - name: ms-pasajeros
-        url: /docs-proxy/ms-pasajeros/v3/api-docs
+        url: /docs/ms-pasajeros/v3/api-docs
       - name: ms-conductores
-        url: /docs-proxy/ms-conductores/v3/api-docs
+        url: /docs/ms-conductores/v3/api-docs
       - name: ms-viajes
-        url: /docs-proxy/ms-viajes/v3/api-docs
+        url: /docs/ms-viajes/v3/api-docs
       - name: ms-pagos
-        url: /docs-proxy/ms-pagos/v3/api-docs
+        url: /docs/ms-pagos/v3/api-docs
       - name: ms-tarifas
-        url: /docs-proxy/ms-tarifas/v3/api-docs
+        url: /docs/ms-tarifas/v3/api-docs
       - name: ms-calificaciones
-        url: /docs-proxy/ms-calificaciones/v3/api-docs
+        url: /docs/ms-calificaciones/v3/api-docs
       - name: ms-incidencias
-        url: /docs-proxy/ms-incidencias/v3/api-docs
+        url: /docs/ms-incidencias/v3/api-docs
       - name: ms-vehiculos
-        url: /docs-proxy/ms-vehiculos/v3/api-docs
+        url: /docs/ms-vehiculos/v3/api-docs
       - name: ms-zonas
-        url: /docs-proxy/ms-zonas/v3/api-docs
+        url: /docs/ms-zonas/v3/api-docs
       - name: ms-notificaciones
-        url: /docs-proxy/ms-notificaciones/v3/api-docs
+        url: /docs/ms-notificaciones/v3/api-docs
